@@ -12,6 +12,7 @@ def getTestData():
     return
 def fit(data,model):
     return
+def PCA(pcaData):
     return
 if __name__ == '__main__':
     data = getModelData()
