@@ -62,17 +62,49 @@ def showReallignedData(data):
     
     img = np.zeros((windowSize,windowSize,3), np.uint8)
     for i in range(n):
-        addLandmarks(img, resizedData[:,i], lines= True)
+        addLandmarks(img, resizedData[:,i], lines= False)
     
     cv2.imwrite('reallignedData.jpg',img)
     cv2.imshow('img',img)
     cv2.waitKey(0) 
+
+#Toont de verandering in de vorm bij toevoegen van de eigenvectoren aan de mean
+#figuur gerangschikt als: mean-x | mean | mean+x  met x = eigenvector * 0.1
+#
+#mean = de gemiddelde waarde gevonden door PCA
+#eigenvectors = de gevonden eigenvectors, gerangschikt op grootte van eigenwaarde
+#hoeveel verschillende eigenvectoren je wil zien
+def showPCAdata(mean, eigenvectors, nb=3):
+    windowSize = 500
+    m,n = eigenvectors.shape
     
+    multiplier = (windowSize*0.45)/np.amax(abs(mean))
+    resizedMean = mean*int(multiplier)+windowSize/2
+    
+    imgMean = np.zeros((windowSize,windowSize,3), np.uint8)
+    addLandmarks(imgMean, resizedMean, lines= True)
+    
+    for i in range(nb):
+        imgEig1 = np.zeros((windowSize,windowSize,3), np.uint8)
+        eig1 = mean + (eigenvectors[:,i] * -0.1)
+        resizedEig1 = eig1*int(multiplier)+windowSize/2
+        addLandmarks(imgEig1,resizedEig1, lines= True)
+        
+        imgEig2 = np.zeros((windowSize,windowSize,3), np.uint8)
+        eig2 = mean + (eigenvectors[:,i] * 0.1)
+        resizedEig2 = eig2*int(multiplier)+windowSize/2
+        addLandmarks(imgEig2,resizedEig2, lines= True)
+        
+        cv2.imshow('verandering bij eigenvector '+str(i+1),np.hstack( ( imgEig1,
+                                    imgMean,
+                                    imgEig2 )
+                                ).astype(np.uint8))
+        cv2.waitKey(0) 
+
 if __name__ == '__main__':
     #showLandmarksOnAllRadioGraphs()
     #showLandmarksOnRadioGraph(1)
     data = project.getModelData()
     reallignedData = project.reallign(data)
-
-    print reallignedData
-    showReallignedData(reallignedData)
+    [values, vectors, mean] = project.PCA(reallignedData)
+    showPCAdata(mean,vectors)

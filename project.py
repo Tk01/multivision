@@ -3,7 +3,7 @@ import cv2.cv as cv
 import numpy as np
 import Image
 import math
-
+import visualize
 #
 # Landmarks zijn (x1,y1,x2,y2,...) geordend, zie visualize (heb normaal deze fout verbeterd)
 #
@@ -32,6 +32,7 @@ def reallign(data):
     #3. Record the first estimate as x0 to define the default orientation.
     x0=example
     while True:
+        visualize.showReallignedData(data)
         examplestored=example
         #4. Align all the shapes with the current estimate of the mean shape.
         '''
@@ -93,6 +94,7 @@ def reallign(data):
         #7. If not converged, return to 4.
         if max(abs(example-examplestored))<0.01 :
             break 
+    visualize.showReallignedData(data)
     return data
 def generateModel(data):
     return    
@@ -100,12 +102,46 @@ def getTestData():
     return
 def fit(data,model):
     return
-def PCA(pcaData):
-    return
+def PCA(data, nb_components = 0):
+    '''
+    Do a PCA analysis on X
+    @param X:                np.array containing the samples
+                             shape = (nb samples, nb dimensions of each sample)
+    @param nb_components:    the nb components we're interested in
+    @return: return the nb_components largest eigenvalues and eigenvectors of the covariance matrix and return the average sample 
+    '''
+    dataTrans = np.transpose(data)
+    [n,d] = dataTrans.shape
+    if (nb_components <= 0) or (nb_components>n):
+        nb_components = n
+    
+    mean = np.average(dataTrans,axis=0)
+    
+    XminMean = np.zeros((d,n))
+    for i in range(0,n):
+        XminMean[:,i] = dataTrans[i] - mean
+    xtx = np.dot(np.transpose(XminMean),XminMean)
+    
+    values, vectors = np.linalg.eig(xtx)
+    
+    values,vectorList = (list(x) for x in zip(*sorted(zip(values, range(0,n)), key=lambda pair: pair[0], reverse=True)))
+    
+    eigenvalues = values[:nb_components]
+    eigenvectorsTemp = np.zeros((n,nb_components))
+    for i in range(0,nb_components):
+        eigenvectorsTemp[:,i] = vectors[:,vectorList[i]]
+    
+    eigenvectors = np.zeros((d,nb_components))
+    for i in range(0,nb_components):
+        v = np.dot(XminMean,eigenvectorsTemp[:,i])
+        eigenvectors[:,i] = v/np.linalg.norm(v)
+    
+    return [eigenvalues, eigenvectors, mean]
+    
 if __name__ == '__main__':
     data = getModelData()
     reallignedData = reallign(data)
-    pcaData = PCA(reallignedData)
+    [values, vectors, mean] = PCA(reallignedData)
     model = generateModel(pcaData)
     testData = getTestData()
     result = fit(testData,model)
