@@ -96,8 +96,51 @@ def reallign(data):
             break 
     visualize.showReallignedData(data)
     return data
-def generateModel(data):
-    return    
+def generateModel(vectors,model,estimate):
+    Xt=0
+    Yt=0
+    angle=0
+    s=0
+    [l,t]=np.shape
+    b=np.zeros((1,t))
+    while(True):
+       Xt_recorded=Xt
+       Yt_recorded=Yt
+       angle_recorded=angle
+       s_recorded=s
+       b_recorded=b
+       x=model+vectors*b 
+       meanx_est=0
+       meany_est=0
+       meanx_mod=0
+       meany_mod=0
+       a=0
+       b=0
+       for j in range(0,80,2):
+            meanx_est=meanx_est+estimate[j]
+            meany_est=meany_est+estimate[j+1]
+            meanx_mod=meanx_mod+x[j]
+            meany_mod=meany_mod+x[j+1]
+            a=a+x[j]*model[j]+model[j+1]*x[j+1]
+            b=b+x[j]*estimate[j+1]-x[j+1]*estimate[j]
+       a=a/np.linalg.norm(x)
+       b=b/np.linalg.norm(x)
+       s=math.sqrt(a*a+b*b)
+       angle=math.atan(b/a)
+       Xt=meanx_mod-meanx_est
+       Yt=meany_mod-meany_est
+       y=np.zeros(80)
+       for j in range(0,80,2):
+           y[j]=math.cos(angle)*(y[j]-Xt)+math.sin(angle)*(y[j]-Xt)
+           y[j+1] =math.sin(angle)*(y[j+1]-Yt)-math.cos(angle)*(y[j+1]-Yt)
+       yx=0
+       for j in range(0,80):
+           yx = y[j]*model[j]
+       y2 = y/(yx)
+       b=np.transpose(vectors)*(y2-model)
+       if (abs(Xt-Xt_recorded) <0.01) and (abs(Yt-Yt_recorded) <0.01) and (abs(s-s_recorded) <0.01) and (abs(angle-angle_recorded) <0.01) and (abs(b-b_recorded) <0.01):
+           break   
+    return estimate   
 def getTestData():
     return
 def fit(data,model):
@@ -142,7 +185,6 @@ if __name__ == '__main__':
     data = getModelData()
     reallignedData = reallign(data)
     [values, vectors, mean] = PCA(reallignedData)
-    model = generateModel(pcaData)
     testData = getTestData()
     result = fit(testData,model)
     
