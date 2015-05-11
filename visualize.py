@@ -101,10 +101,66 @@ def showPCAdata(mean, eigenvectors, nb=3):
                                 ).astype(np.uint8))
         cv2.waitKey(0) 
 
+def showEdges():
+    graphNumber = 1
+    if graphNumber < 9:
+        img = cv2.imread("Radiographs/0"+str(graphNumber)+".tif",0)
+    else:
+        img = cv2.imread("Radiographs/"+str(graphNumber)+".tif",0)
+    
+    #equ = cv2.equalizeHist(img)
+    #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    #equ = clahe.apply(img)
+    filter_length = 7
+    sigma = 2
+    result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)    
+    
+    edges = cv2.Canny(result, 10 , 25)
+
+    canny_result = np.copy(result)
+    canny_result[edges.astype(np.bool)]=0
+    cv2.imshow('img',canny_result)
+    cv2.waitKey(0)
+    
+    cv2.imwrite('edgesData.jpg',canny_result)
+
+
+    
+    canny_empty = np.zeros((1603,3023,3), np.uint8)
+    canny_empty[edges.astype(np.bool)]=255
+    
+    cv2.imwrite('edgesData2.jpg',canny_empty)
+
+
+def click_and_crop(event, x, y, flags, param):
+	# grab references to the global variables
+	global refPt, cropping
+ 
+	# if the left mouse button was clicked, record the starting
+	# (x, y) coordinates and indicate that cropping is being
+	# performed
+	if event == cv2.EVENT_LBUTTONDOWN:
+		refPt = [(x, y)]
+		cropping = True
+ 
+	# check to see if the left mouse button was released
+	elif event == cv2.EVENT_LBUTTONUP:
+		# record the ending (x, y) coordinates and indicate that
+		# the cropping operation is finished
+		refPt.append((x, y))
+		cropping = False
+ 
+		# draw a rectangle around the region of interest
+		cv2.rectangle(image, refPt[0], refPt[1], (0, 255, 0), 2)
+		cv2.imshow("image", image)
+		
+
+
 if __name__ == '__main__':
     #showLandmarksOnAllRadioGraphs()
     #showLandmarksOnRadioGraph(1)
-    data = project.getModelData()
-    reallignedData = project.reallign(data)
-    [values, vectors, mean] = project.PCA(reallignedData)
-    showPCAdata(mean,vectors)
+    #data = project.getModelData()
+    #reallignedData = project.reallign(data)
+    #[values, vectors, mean] = project.PCA(reallignedData)
+    #showPCAdata(mean,vectors)
+    showEdges()

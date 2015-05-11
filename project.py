@@ -143,8 +143,22 @@ def generateModel(vectors,model,estimate):
     return estimate   
 def getTestData():
     return
-def fit(data,model):
+def fit(data,model,mean):
+    #per image
+    #step1 ask estimate
+    #step2 examine the region around each point around Xi to find a new point Xi'
+    #gebaseerd op edge detection en distance
+    
+    #step3 update paramaters
+    #step4 check constraints
+    #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
+    #b mag veranderen binnen gegeven grenzen
+    
+    #repeat from 2 until convergence
     return
+
+
+
 def PCA(data, nb_components = 0):
     '''
     Do a PCA analysis on X
@@ -186,5 +200,5 @@ if __name__ == '__main__':
     reallignedData = reallign(data)
     [values, vectors, mean] = PCA(reallignedData)
     testData = getTestData()
-    result = fit(testData,model)
+    result = fit(data, vectors, mean)
     
