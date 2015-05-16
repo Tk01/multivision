@@ -4,6 +4,8 @@ import numpy as np
 import Image
 import math
 import visualize
+import estimateClick
+
 #
 # Landmarks zijn (x1,y1,x2,y2,...) geordend, zie visualize (heb normaal deze fout verbeterd)
 #
@@ -96,6 +98,8 @@ def reallign(data):
             break 
     visualize.showReallignedData(data)
     return data
+    
+    
 def generateModel(vectors,model,estimate):
     Xt=0
     Yt=0
@@ -141,20 +145,27 @@ def generateModel(vectors,model,estimate):
        if (abs(Xt-Xt_recorded) <0.01) and (abs(Yt-Yt_recorded) <0.01) and (abs(s-s_recorded) <0.01) and (abs(angle-angle_recorded) <0.01) and (abs(b-b_recorded) <0.01):
            break   
     return estimate   
+    
+    
 def getTestData():
     return
+    
+    
 def fit(data,model,mean):
     #per image
-    #step1 ask estimate
-    #step2 examine the region around each point around Xi to find a new point Xi'
-    #gebaseerd op edge detection en distance
-    
-    #step3 update paramaters
-    #step4 check constraints
-    #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
-    #b mag veranderen binnen gegeven grenzen
-    
-    #repeat from 2 until convergence
+    for graphNumber in range(1,15):
+        img = visualize.readRadiograph(graphNumber)
+        #step1 ask estimate
+        [(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
+        #step2 examine the region around each point around Xi to find a new point Xi'
+        #gebaseerd op edge detection en distance
+        
+        #step3 update paramaters
+        #step4 check constraints
+        #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
+        #b mag veranderen binnen gegeven grenzen
+        
+        #repeat from 2 until convergence
     return
 
 

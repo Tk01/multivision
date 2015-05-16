@@ -20,6 +20,14 @@ def showLandmarksOnAllRadioGraphs(realIm = True, show = False):
     for n in range(1,15):
         showLandmarksOnRadioGraph(n,realIm, show)
         
+def readRadiograph(graphNumber):
+        if graphNumber < 10:
+            img = cv2.imread("Radiographs/0"+str(graphNumber)+".tif",0)
+        else:
+            img = cv2.imread("Radiographs/"+str(graphNumber)+".tif",0)
+            
+        return img
+        
         
 #GraphNumber = welke RadioGraph je wil
 #realIm = of je de foto als achtergrond wil of gwn een zwarte achtergrond
@@ -27,10 +35,7 @@ def showLandmarksOnAllRadioGraphs(realIm = True, show = False):
 def showLandmarksOnRadioGraph(graphNumber, realIm = True, show = False):
     result= np.zeros((80))
     if realIm:
-        if graphNumber < 9:
-            img = cv2.imread("Radiographs/0"+str(graphNumber)+".tif",0)
-        else:
-            img = cv2.imread("Radiographs/"+str(graphNumber)+".tif",0)
+        img = readRadiograph(graphNumber)
     else:
         img = np.zeros((1603,3023,3), np.uint8)
     for i in range(8):
