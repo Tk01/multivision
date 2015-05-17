@@ -155,35 +155,34 @@ def fit(data,model,mean):
     #per image
     for graphNumber in range(1,15):
         img = visualize.readRadiograph(graphNumber)
-        vectorizedEdgeData = findVectorizedEdgeData(img)
+        
         #step1 ask estimate
+        
         [(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
+        vectorizedEdgeData = findVectorizedEdgeData(img,(x1,y1),(x2,y2))
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
-        print 'improve'
+        
         mean = improve(mean,vectorizedEdgeData)
         #step3 update paramaters
         #step4 check constraints
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
         #b mag veranderen binnen gegeven grenzen
-        print 'improve done'
         #repeat from 2 until convergence
     return
     
-def findVectorizedEdgeData(img):
+def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
     filter_length = 7
     sigma = 2
     result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)    
     
     edges = cv2.Canny(result, 10 , 25)
 
-    canny_result = np.copy(result)
-    canny_result[edges.astype(np.bool)]=0
     array = []
-    [M,N] = np.shape(canny_result)
-    for x in range(0,M):
-        for y in range(0,N):
-            if canny_result[x,y] != 0:
+    [M,N] = np.shape(edges)
+    for x in range(x1,x2):
+        for y in range(y1,y2):
+            if edges[x,y] != 0:
                 array.append((x,y))
     return array
 
