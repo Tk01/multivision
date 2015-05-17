@@ -155,21 +155,81 @@ def fit(data,model,mean):
     #per image
     for graphNumber in range(1,15):
         img = visualize.readRadiograph(graphNumber)
+        vectorizedEdgeData = findVectorizedEdgeData(img)
         #step1 ask estimate
         [(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
-        
+        print 'improve'
+        mean = improve(mean,vectorizedEdgeData)
         #step3 update paramaters
         #step4 check constraints
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
         #b mag veranderen binnen gegeven grenzen
-        
+        print 'improve done'
         #repeat from 2 until convergence
     return
+    
+def findVectorizedEdgeData(img):
+    filter_length = 7
+    sigma = 2
+    result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)    
+    
+    edges = cv2.Canny(result, 10 , 25)
 
+    canny_result = np.copy(result)
+    canny_result[edges.astype(np.bool)]=0
+    array = []
+    [M,N] = np.shape(canny_result)
+    for x in range(0,M):
+        for y in range(0,N):
+            if canny_result[x,y] != 0:
+                array.append((x,y))
+    return array
 
+def improve(mean,vectorizedEdgeData):
+    states = np.zeros((9,80))
+    nedges = np.zeros((9,80))
+    for l in range(0,80,2):
+        for i in range(-1,2):
+            for j in range(-1,2):
+                copyS = np.copy(states)
+                copyN = np.copy(nedges)
+                nPoint = nearestEdgePoint(mean[l]+i,mean[l+1]+j,vectorizedEdgeData)
+                for k in range (0,9):
+                    copyS[k,l]=mean[l]+i
+                    copyS[k,l+1]=mean[l]+j
+                    copyN[k,l]=nPoint[0]
+                    copyN[k,l+1]=nPoint[1]
+                minv= np.linalg.norm(copyS[0,:]-copyN[0,:])
+                minState=copyS[0,:]
+                minNEdge=copyN[0,:]
+                for k in range (1,9):
+                    if minv > np.linalg.norm(copyS[k,:]-copyN[k,:]):
+                        minv= np.linalg.norm(copyS[k,:]-copyN[k,:])
+                        minState=copyS[k,:]
+                        minNEdge=copyN[k,:]
+                states[3*(i+1)+j+1,:]=minState
+                nedges[3*(i+1)+j+1,:]=minNEdge
+    minv= np.linalg.norm(states[0,:]-nedges[0,:])
+    minState=states[0,:]
+    for k in range (1,9):
+        if minv > np.linalg.norm(states[k,:]-nedges[k,:]):
+                minv= np.linalg.norm(states[k,:]-nedges[k,:])
+                minState=states[k,:]
+    return minState
 
+def nearestEdgePoint(x,y,vectors):
+    minv=(x-vectors[0][0])*(x-vectors[0][0])+(y-vectors[0][1])*(y-vectors[0][1])
+    minx =vectors[0][0]
+    miny =vectors[0][1]
+    for point in vectors:
+        if minv>(x-point[0])*(x-point[0])+(y-point[1])*(y-point[1]):
+           minv=(x-point[0])*(x-point[0])+(y-point[1])*(y-point[1])
+           minx =point[0]
+           miny =point[1]
+    return (minx,miny)
+            
 def PCA(data, nb_components = 0):
     '''
     Do a PCA analysis on X
