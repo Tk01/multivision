@@ -75,7 +75,8 @@ def askForEstimate(radiograph):
     # reset de globale waarden
     refPt = []
     image = []
-    return [(x1,y1),(x2,y2)]
+    
+    return [(y1,x1),(y2,x2)]
     
 
 if __name__ == '__main__':

@@ -105,32 +105,33 @@ def generateModel(vectors,model,estimate):
     Yt=0
     angle=0
     s=0
-    [l,t]=np.shape
-    b=np.zeros((1,t))
+    
+    [l,t]=vectors.shape
+    b=np.zeros(t)
     while(True):
        Xt_recorded=Xt
        Yt_recorded=Yt
        angle_recorded=angle
        s_recorded=s
        b_recorded=b
-       x=model+vectors*b 
+       x=model+np.dot(vectors,b) 
        meanx_est=0
        meany_est=0
        meanx_mod=0
        meany_mod=0
        a=0
-       b=0
+       c=0
        for j in range(0,80,2):
             meanx_est=meanx_est+estimate[j]
             meany_est=meany_est+estimate[j+1]
             meanx_mod=meanx_mod+x[j]
             meany_mod=meany_mod+x[j+1]
             a=a+x[j]*model[j]+model[j+1]*x[j+1]
-            b=b+x[j]*estimate[j+1]-x[j+1]*estimate[j]
+            c=c+x[j]*estimate[j+1]-x[j+1]*estimate[j]
        a=a/np.linalg.norm(x)
-       b=b/np.linalg.norm(x)
-       s=math.sqrt(a*a+b*b)
-       angle=math.atan(b/a)
+       c=c/np.linalg.norm(x)
+       s=math.sqrt(a*a+c*c)
+       angle=math.atan(c/a)
        Xt=meanx_mod-meanx_est
        Yt=meany_mod-meany_est
        y=np.zeros(80)
@@ -139,12 +140,12 @@ def generateModel(vectors,model,estimate):
            y[j+1] =math.sin(angle)*(y[j+1]-Yt)-math.cos(angle)*(y[j+1]-Yt)
        yx=0
        for j in range(0,80):
-           yx = y[j]*model[j]
+           yx = yx+ y[j]*model[j]
        y2 = y/(yx)
-       b=np.transpose(vectors)*(y2-model)
-       if (abs(Xt-Xt_recorded) <0.01) and (abs(Yt-Yt_recorded) <0.01) and (abs(s-s_recorded) <0.01) and (abs(angle-angle_recorded) <0.01) and (abs(b-b_recorded) <0.01):
+       b=np.dot(np.transpose(vectors),(y2-model))
+       if (abs(Xt-Xt_recorded) <0.01) and (abs(Yt-Yt_recorded) <0.01) and (abs(s-s_recorded) <0.01) and (abs(angle-angle_recorded) <0.01) and (abs(max(b-b_recorded)) <0.01):
            break   
-    return estimate   
+    return [x,Xt, Yt, s, angle, b]
     
     
 def getTestData():
@@ -159,17 +160,67 @@ def fit(data,model,mean):
         #step1 ask estimate
         
         [(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
-        vectorizedEdgeData = findVectorizedEdgeData(img,(x1,y1),(x2,y2))
+        print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
+        lengthx =x2-x1
+        lengthy =y2-y1
+        vectorizedEdgeData = findVectorizedEdgeData(img,(x1-lengthx,y1-lengthy),(x2+lengthx,y2+lengthy))
+        genModel = adaptMean(mean,(x1,y1),(x2,y2))
+        Xt =0
+        Yt =0
+        s =0 
+        angle =0
+        b =0
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
-        
-        mean = improve(mean,vectorizedEdgeData)
+        while True:
+            img2 = img.copy()
+            visualize.addLandmarks(img2, genModel,False)
+            img2=cv2.resize(img,(1000,500))
+            cv2.imshow('img_res',img2)
+            cv2.waitKey(0) 
+            genModel2 = genModel
+            Xt2 =Xt
+            Yt2 =Yt
+            s2 =s
+            angle2 =angle
+            b2 =b
+            genModel = improve(genModel,vectorizedEdgeData)
+            img2 = img.copy()
+            visualize.addLandmarks(img2, genModel,False)
+            img2=cv2.resize(img,(1000,500))
+            cv2.imshow('img_res',img2)
+            cv2.waitKey(0) 
         #step3 update paramaters
+            [genModel,Xt, Yt, s, angle, b]= generateModel(model,genModel,mean)
+            
         #step4 check constraints
+            if s>1.2 or Xt>x2 or Xt<x1 or Yt>y2 or Yt<y1:
+                break
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
         #b mag veranderen binnen gegeven grenzen
         #repeat from 2 until convergence
+            if math.abs(max(genModel2-genModel)) <0.01 and math.abs(Xt2-Xt) <0.01 and math.abs(Yt2-Yt) <0.01 and math.abs(s2-s) <0.01 and math.abs(angle2-angle) <0.01 and math.abs(b2-b) <0.01:
+                #visualize genModel
+                
+                break
     return
+    
+def adaptMean(mean,(x1,y1),(x2,y2)):
+    lengthx = x2-x1
+    lengthy=  y2-y1
+    centerx= x1+lengthx/2
+    centery= y1+lengthy/2
+    meanx = np.zeros(40)
+    meany = np.zeros(40)
+    for x in range(0,80,2):
+        meanx[x/2]=mean[x]
+        meany[x/2]=mean[x+1]
+    meanx=centerx + meanx*lengthx/(max(meanx)-min(meanx))
+    meany=centery + meany*lengthy/(max(meany)-min(meany))
+    for x in range(0,80,2):
+        mean[x]=meanx[x/2]
+        mean[x+1]=meany[x/2]
+    return mean
     
 def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
     filter_length = 7
@@ -180,9 +231,9 @@ def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
 
     array = []
     [M,N] = np.shape(edges)
-    for x in range(x1,x2):
-        for y in range(y1,y2):
-            if edges[x,y] != 0:
+    for x in range(x1,x2+1):
+        for y in range(y1,y2+1):
+            if x>=0 and x< M and y>=0 and y< N and edges[x,y] != 0:
                 array.append((x,y))
     return array
 
@@ -270,5 +321,5 @@ if __name__ == '__main__':
     reallignedData = reallign(data)
     [values, vectors, mean] = PCA(reallignedData)
     testData = getTestData()
-    result = fit(data, vectors, mean)
+    result = fit(reallignedData, vectors, mean)
     
