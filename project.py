@@ -164,21 +164,24 @@ def fit(data,model,mean):
         lengthx =x2-x1
         lengthy =y2-y1
         vectorizedEdgeData = findVectorizedEdgeData(img,(x1-lengthx,y1-lengthy),(x2+lengthx,y2+lengthy))
+        visualize.displayVectorizedEdgeData(img, vectorizedEdgeData)
         genModel = adaptMean(mean,(x1,y1),(x2,y2))
         Xt =0
         Yt =0
         s =0 
         angle =0
-        b =0
+        b =0  
+    
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
         while True:
             img2 = img.copy()
             visualize.addLandmarks(img2, genModel,False)
             img2=cv2.resize(img,(1000,500))
+            img2=cv2.resize(img2,(1000,500))
             cv2.imshow('img_res',img2)
             cv2.waitKey(0) 
-            genModel2 = genModel
+            genModel2 = list(genModel)
             Xt2 =Xt
             Yt2 =Yt
             s2 =s
@@ -188,6 +191,7 @@ def fit(data,model,mean):
             img2 = img.copy()
             visualize.addLandmarks(img2, genModel,False)
             img2=cv2.resize(img,(1000,500))
+            img2=cv2.resize(img2,(1000,500))
             cv2.imshow('img_res',img2)
             cv2.waitKey(0) 
         #step3 update paramaters
@@ -206,6 +210,7 @@ def fit(data,model,mean):
     return
     
 def adaptMean(mean,(x1,y1),(x2,y2)):
+    mean = list(mean)
     lengthx = x2-x1
     lengthy=  y2-y1
     centerx= x1+lengthx/2
@@ -240,11 +245,12 @@ def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
 def improve(mean,vectorizedEdgeData):
     states = np.zeros((9,80))
     nedges = np.zeros((9,80))
+    #initialisser met 9 nearestEdgePoints van 1ste punt? (mss sneller?)
     for l in range(0,80,2):
         for i in range(-1,2):
             for j in range(-1,2):
-                copyS = np.copy(states)
-                copyN = np.copy(nedges)
+                copyS = np.copy(states)#copy voor for i ? (want nu verlies je 1 van de 9
+                copyN = np.copy(nedges)# mogelijkheden doordat je 1 naar andere kopieert aan eind
                 nPoint = nearestEdgePoint(mean[l]+i,mean[l+1]+j,vectorizedEdgeData)
                 for k in range (0,9):
                     copyS[k,l]=mean[l]+i
@@ -262,11 +268,11 @@ def improve(mean,vectorizedEdgeData):
                 states[3*(i+1)+j+1,:]=minState
                 nedges[3*(i+1)+j+1,:]=minNEdge
     minv= np.linalg.norm(states[0,:]-nedges[0,:])
-    minState=states[0,:]
+    minState=nedges[0,:]
     for k in range (1,9):
         if minv > np.linalg.norm(states[k,:]-nedges[k,:]):
                 minv= np.linalg.norm(states[k,:]-nedges[k,:])
-                minState=states[k,:]
+                minState=nedges[k,:]
     return minState
 
 def nearestEdgePoint(x,y,vectors):
