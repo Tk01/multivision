@@ -175,7 +175,7 @@ def fit(data,model,mean):
         while True:
             img2 = img.copy()
             visualize.addLandmarks(img2, genModel,False)
-            img2=cv2.resize(img,(1000,500))
+            #img2=cv2.resize(img,(1000,500))
             cv2.imshow('img_res',img2)
             cv2.waitKey(0) 
             genModel2 = genModel
@@ -187,14 +187,14 @@ def fit(data,model,mean):
             genModel = improve(genModel,vectorizedEdgeData)
             img2 = img.copy()
             visualize.addLandmarks(img2, genModel,False)
-            img2=cv2.resize(img,(1000,500))
+            #img2=cv2.resize(img,(1000,500))
             cv2.imshow('img_res',img2)
             cv2.waitKey(0) 
         #step3 update paramaters
             [genModel,Xt, Yt, s, angle, b]= generateModel(model,genModel,mean)
             
         #step4 check constraints
-            if s>1.2 or Xt>x2 or Xt<x1 or Yt>y2 or Yt<y1:
+            if Xt>x2 or Xt<x1 or Yt>y2 or Yt<y1:
                 break
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
         #b mag veranderen binnen gegeven grenzen
@@ -248,7 +248,7 @@ def improve(mean,vectorizedEdgeData):
                 nPoint = nearestEdgePoint(mean[l]+i,mean[l+1]+j,vectorizedEdgeData)
                 for k in range (0,9):
                     copyS[k,l]=mean[l]+i
-                    copyS[k,l+1]=mean[l]+j
+                    copyS[k,l+1]=mean[l+1]+j
                     copyN[k,l]=nPoint[0]
                     copyN[k,l+1]=nPoint[1]
                 minv= np.linalg.norm(copyS[0,:]-copyN[0,:])
