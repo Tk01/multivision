@@ -100,13 +100,13 @@ def reallign(data):
     return data
     
     
-def generateModel(vectors,model,estimate):
+def generateModel(P,mean,Y):
     Xt=0
     Yt=0
     angle=0
-    s=0
+    s=1
     
-    [l,t]=vectors.shape
+    [l,t]=P.shape
     b=np.zeros(t)
     while(True):
        Xt_recorded=Xt
@@ -114,45 +114,53 @@ def generateModel(vectors,model,estimate):
        angle_recorded=angle
        s_recorded=s
        b_recorded=b
-       x=model+np.dot(vectors,b) 
-       meanx_est=0
-       meany_est=0
-       meanx_mod=0
-       meany_mod=0
-       a=0
-       c=0
-       for j in range(0,80,2):
-            meanx_est=meanx_est+estimate[j]
-            meany_est=meany_est+estimate[j+1]
-            meanx_mod=meanx_mod+x[j]
-            meany_mod=meany_mod+x[j+1]
-            a=a+x[j]*model[j]+model[j+1]*x[j+1]
-            c=c+x[j]*estimate[j+1]-x[j+1]*estimate[j]
-       a=a/np.linalg.norm(x)
-       c=c/np.linalg.norm(x)
-       s=math.sqrt(a*a+c*c)
-       angle=math.atan(c/a)
-       Xt=meanx_mod-meanx_est
-       Yt=meany_mod-meany_est
+       x=mean+np.dot(P,b) 
+       [Xt,Yt,s,angle] =allign(x,Y)
        y=np.zeros(80)
        for j in range(0,80,2):
-           y[j]=math.cos(angle)*(y[j]-Xt)+math.sin(angle)*(y[j]-Xt)
-           y[j+1] =math.sin(angle)*(y[j+1]-Yt)-math.cos(angle)*(y[j+1]-Yt)
+           y[j] = math.cos(angle)/s*(Y[j]-Xt)+math.sin(angle)*(Y[j+1]-Yt)/s
+           y[j+1] = math.cos(angle)*(Y[j+1]-Yt)/s-math.sin(angle)*(Y[j]-Xt)/s
        yx=0
        for j in range(0,80):
-           yx = yx+ y[j]*model[j]
+           yx = yx+ y[j]*mean[j]
        y2 = y/(yx)
-       b=np.dot(np.transpose(vectors),(y2-model))
+       b=np.dot(np.transpose(P),(y2-mean))
        if (abs(Xt-Xt_recorded) <0.01) and (abs(Yt-Yt_recorded) <0.01) and (abs(s-s_recorded) <0.01) and (abs(angle-angle_recorded) <0.01) and (abs(max(b-b_recorded)) <0.01):
-           break   
+           break
+    for i in range(0,80,2):
+           x[i] = s*math.cos(angle)*x[i]-s*math.sin(angle)*(x[i+1])+Xt
+           x[i+1] = math.cos(angle)*(x[i+1])*s+math.sin(angle)*(x[i])*s+Yt
     return [x,Xt, Yt, s, angle, b]
-    
-    
+
+def allign(x1,x2):
+    meanx_est=0
+    meany_est=0
+    meanx_mod=0
+    meany_mod=0
+    a=0
+    c=0
+    v=0
+    for j in range(0,80,2):
+        meanx_est=meanx_est+x2[j]
+        meany_est=meany_est+x2[j+1]
+        meanx_mod=meanx_mod+x1[j]
+        meany_mod=meany_mod+x1[j+1]
+    Xt=(meanx_est-meanx_mod)/40
+    Yt=(meany_est-meany_mod)/40
+    for j in range(0,80,2): 
+            a=a+(x1[j] - meanx_mod)*(x2[j]-meanx_est)+(x1[j+1]- meany_mod)*(x2[j+1]-meany_est)
+            c=c+(x1[j] - meanx_mod)*(x2[j+1]-meany_est)-(x1[j+1] - meany_mod)*(x2[j]-meanx_est)
+            v=v+(x1[j] - meanx_mod)*(x1[j] - meanx_mod)+(x1[j+1] - meany_mod)*(x1[j+1] - meany_mod)
+    a=a/v
+    c=c/v
+    s=math.sqrt(a*a+c*c)
+    angle=math.atan(c/a)
+    return [Xt,Yt,s,angle]   
 def getTestData():
     return
     
     
-def fit(data,model,mean):
+def fit(data,vectors,mean):
     #per image
     for graphNumber in range(1,15):
         img = visualize.readRadiograph(graphNumber)
@@ -168,9 +176,10 @@ def fit(data,model,mean):
         genModel = adaptMean(mean,(x1,y1),(x2,y2))
         Xt =0
         Yt =0
-        s =0 
+        s =1 
         angle =0
-        b =0  
+        [l,t]=vectors.shape
+        b=np.zeros(t) 
     
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
@@ -178,7 +187,7 @@ def fit(data,model,mean):
             img2 = img.copy()
             visualize.addLandmarks(img2, genModel,False)
             img2=cv2.resize(img2,(1000,500))
-            cv2.imshow('img_res',img2)
+            cv2.imshow('img_res1',img2)
             cv2.waitKey(0) 
             genModel2 = list(genModel)
             Xt2 =Xt
@@ -190,18 +199,22 @@ def fit(data,model,mean):
             img2 = img.copy()
             visualize.addLandmarks(img2, genModel,False)
             img2=cv2.resize(img2,(1000,500))
-            cv2.imshow('img_res',img2)
+            cv2.imshow('img_res2',img2)
             cv2.waitKey(0) 
         #step3 update paramaters
-            [genModel,Xt, Yt, s, angle, b]= generateModel(model,genModel,mean)
-            
+            [genModel,Xt, Yt, s, angle, b]= generateModel(vectors,mean,genModel)
+            img2 = img.copy()
+            visualize.addLandmarks(img2, genModel,False)
+            img2=cv2.resize(img2,(1000,500))
+            cv2.imshow('img_res3',img2)
+            cv2.waitKey(0) 
         #step4 check constraints
-            if Xt>x2 or Xt<x1 or Yt>y2 or Yt<y1:
-                break
+           # if Xt>x2 or Xt<x1 or Yt>y2 or Yt<y1:
+            #    break
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
         #b mag veranderen binnen gegeven grenzen
         #repeat from 2 until convergence
-            if math.abs(max(genModel2-genModel)) <0.01 and math.abs(Xt2-Xt) <0.01 and math.abs(Yt2-Yt) <0.01 and math.abs(s2-s) <0.01 and math.abs(angle2-angle) <0.01 and math.abs(b2-b) <0.01:
+            if max(abs(genModel2-genModel)) <0.01 and abs(Xt2-Xt) <0.01 and abs(Yt2-Yt) <0.01 and abs(s2-s) <0.01 and abs(angle2-angle) <0.01 and max(abs(b2-b)) <0.01:
                 #visualize genModel
                 
                 break
@@ -236,8 +249,8 @@ def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
     [M,N] = np.shape(edges)
     for x in range(x1,x2+1):
         for y in range(y1,y2+1):
-            if x>=0 and x< M and y>=0 and y< N and edges[x,y] != 0:
-                array.append((x,y))
+            if y>=0 and y< M and x>=0 and x< N and edges[y,x] != 0:
+                array.append((y,x))
     return array
 
 def improve(mean,vectorizedEdgeData):
@@ -245,10 +258,10 @@ def improve(mean,vectorizedEdgeData):
     nedges = np.zeros((9,80))
     #initialisser met 9 nearestEdgePoints van 1ste punt? (mss sneller?)
     for l in range(0,80,2):
+        copyS = np.copy(states)#copy voor for i ? (want nu verlies je 1 van de 9
+        copyN = np.copy(nedges)# mogelijkheden doordat je 1 naar andere kopieert aan eind
         for i in range(-1,2):
             for j in range(-1,2):
-                copyS = np.copy(states)#copy voor for i ? (want nu verlies je 1 van de 9
-                copyN = np.copy(nedges)# mogelijkheden doordat je 1 naar andere kopieert aan eind
                 nPoint = nearestEdgePoint(mean[l]+i,mean[l+1]+j,vectorizedEdgeData)
                 for k in range (0,9):
                     copyS[k,l]=mean[l]+i
@@ -266,11 +279,11 @@ def improve(mean,vectorizedEdgeData):
                 states[3*(i+1)+j+1,:]=minState
                 nedges[3*(i+1)+j+1,:]=minNEdge
     minv= np.linalg.norm(states[0,:]-nedges[0,:])
-    minState=nedges[0,:]
+    minState=states[0,:]
     for k in range (1,9):
         if minv > np.linalg.norm(states[k,:]-nedges[k,:]):
                 minv= np.linalg.norm(states[k,:]-nedges[k,:])
-                minState=nedges[k,:]
+                minState=states[k,:]
     return minState
 
 def nearestEdgePoint(x,y,vectors):
