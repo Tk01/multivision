@@ -101,19 +101,27 @@ def reallign(data):
     
     
 def generateModel(P,mean,Y):
+    print Y
     Xt=0
     Yt=0
     angle=0
     s=1
+    Xt_recorded=0
+    Yt_recorded=0
+    angle_recorded=0
+    s_recorded=1
     
     [l,t]=P.shape
     b=np.zeros(t)
+    b_recorded=np.zeros(t)
     while(True):
+       print "Jah!jah!jaaaaaaaaaaaaaaah!"
        Xt_recorded=Xt
        Yt_recorded=Yt
        angle_recorded=angle
        s_recorded=s
        b_recorded=b
+
        x=mean+np.dot(P,b) 
        [Xt,Yt,s,angle] =allign(x,Y)
        y=np.zeros(80)
@@ -124,12 +132,41 @@ def generateModel(P,mean,Y):
        for j in range(0,80):
            yx = yx+ y[j]*mean[j]
        y2 = y/(yx)
-       b=np.dot(np.transpose(P),(y2-mean))
-       if (abs(Xt-Xt_recorded) <0.01) and (abs(Yt-Yt_recorded) <0.01) and (abs(s-s_recorded) <0.01) and (abs(angle-angle_recorded) <0.01) and (abs(max(b-b_recorded)) <0.01):
-           break
+       b=np.dot(np.transpose(P),(y2-mean)) + b_recorded
+       
+       #Xt_recorded=Xt_recorded+Xt
+       #Yt_recorded=Yt_recorded+Yt
+       #angle_recorded=angle_recorded+angle
+       #s_recorded=s_recorded*s
+       #b_recorded=b_recorded+b
+       print Xt
+       print Yt
+       print s
+       print angle
+       print x
+       
+       
+       #if (abs(Xt-Xt_recorded) <0.01) and (abs(Yt-Yt_recorded) <0.01) and (abs(s-s_recorded) <0.01) and (abs(angle-angle_recorded) <0.01):
+       break
+       #if (abs(Xt) <0.01) and (abs(Yt) <0.01) and (abs(s) <0.01) and (abs(angle) <0.01) and (abs(max(b)) <0.01):
+       #    break
+       
+    scaledCos = s_recorded*math.cos(angle_recorded)
+    scaledSin = s_recorded*math.sin(angle_recorded)
+    print x
     for i in range(0,80,2):
-           x[i] = s*math.cos(angle)*x[i]-s*math.sin(angle)*(x[i+1])+Xt
-           x[i+1] = math.cos(angle)*(x[i+1])*s+math.sin(angle)*(x[i])*s+Yt
+        x1 = s*math.cos(angle)*x[i]-s*math.sin(angle)*(x[i+1])+Xt
+        x2 = math.cos(angle)*(x[i+1])*s+math.sin(angle)*(x[i])*s+Yt
+        #x1 = scaledCos*x[i]-scaledSin*(x[i+1])+Xt_recorded
+        #x2 = scaledCos*(x[i+1])+scaledSin*(x[i])+Yt_recorded
+        x[i] = x1
+        x[i+1] = x2
+
+    print Xt_recorded
+    print Yt_recorded
+    print s_recorded
+    print angle_recorded
+    print x
     return [x,Xt, Yt, s, angle, b]
 
 def allign(x1,x2):
@@ -263,11 +300,12 @@ def improve(mean,vectorizedEdgeData):
         for i in range(-1,2):
             for j in range(-1,2):
                 nPoint = nearestEdgePoint(mean[l]+i,mean[l+1]+j,vectorizedEdgeData)
-                for k in range (0,9):
-                    copyS[k,l]=mean[l]+i
-                    copyS[k,l+1]=mean[l+1]+j
-                    copyN[k,l]=nPoint[0]
-                    copyN[k,l+1]=nPoint[1]
+                
+                copyS[:,l]=mean[l]+i
+                copyS[:,l+1]=mean[l+1]+j
+                copyN[:,l]=nPoint[0]
+                copyN[:,l+1]=nPoint[1]
+                
                 minv= np.linalg.norm(copyS[0,:]-copyN[0,:])
                 minState=copyS[0,:]
                 minNEdge=copyN[0,:]
