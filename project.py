@@ -5,7 +5,8 @@ import Image
 import math
 import visualize
 import estimateClick
-
+import sys
+import scipy.spatial
 #
 # Landmarks zijn (x1,y1,x2,y2,...) geordend, zie visualize (heb normaal deze fout verbeterd)
 #
@@ -101,28 +102,21 @@ def reallign(data):
     
     
 def generateModel(P,mean,Y):
-    print Y
     Xt=0
     Yt=0
     angle=0
     s=1
-    Xt_recorded=0
-    Yt_recorded=0
-    angle_recorded=0
-    s_recorded=1
-    
     [l,t]=P.shape
     b=np.zeros(t)
-    b_recorded=np.zeros(t)
     while(True):
-       print "Jah!jah!jaaaaaaaaaaaaaaah!"
+
        Xt_recorded=Xt
        Yt_recorded=Yt
        angle_recorded=angle
        s_recorded=s
        b_recorded=b
-
-       x=mean+np.dot(P,b) 
+       
+       x=mean +np.dot(P,b)
        [Xt,Yt,s,angle] =allign(x,Y)
        y=np.zeros(80)
        for j in range(0,80,2):
@@ -132,41 +126,20 @@ def generateModel(P,mean,Y):
        for j in range(0,80):
            yx = yx+ y[j]*mean[j]
        y2 = y/(yx)
-       b=np.dot(np.transpose(P),(y2-mean)) + b_recorded
-       
-       #Xt_recorded=Xt_recorded+Xt
-       #Yt_recorded=Yt_recorded+Yt
-       #angle_recorded=angle_recorded+angle
-       #s_recorded=s_recorded*s
-       #b_recorded=b_recorded+b
-       print Xt
-       print Yt
-       print s
-       print angle
-       print x
-       
-       
+       b=np.dot(np.transpose(P),(y2-mean))
+       if(max(abs(b-b_recorded))<0.01):
        #if (abs(Xt-Xt_recorded) <0.01) and (abs(Yt-Yt_recorded) <0.01) and (abs(s-s_recorded) <0.01) and (abs(angle-angle_recorded) <0.01):
-       break
+        break
        #if (abs(Xt) <0.01) and (abs(Yt) <0.01) and (abs(s) <0.01) and (abs(angle) <0.01) and (abs(max(b)) <0.01):
        #    break
        
-    scaledCos = s_recorded*math.cos(angle_recorded)
-    scaledSin = s_recorded*math.sin(angle_recorded)
-    print x
+
     for i in range(0,80,2):
         x1 = s*math.cos(angle)*x[i]-s*math.sin(angle)*(x[i+1])+Xt
         x2 = math.cos(angle)*(x[i+1])*s+math.sin(angle)*(x[i])*s+Yt
-        #x1 = scaledCos*x[i]-scaledSin*(x[i+1])+Xt_recorded
-        #x2 = scaledCos*(x[i+1])+scaledSin*(x[i])+Yt_recorded
         x[i] = x1
         x[i+1] = x2
 
-    print Xt_recorded
-    print Yt_recorded
-    print s_recorded
-    print angle_recorded
-    print x
     return [x,Xt, Yt, s, angle, b]
 
 def allign(x1,x2):
@@ -178,12 +151,12 @@ def allign(x1,x2):
     c=0
     v=0
     for j in range(0,80,2):
-        meanx_est=meanx_est+x2[j]
-        meany_est=meany_est+x2[j+1]
-        meanx_mod=meanx_mod+x1[j]
-        meany_mod=meany_mod+x1[j+1]
-    Xt=(meanx_est-meanx_mod)/40
-    Yt=(meany_est-meany_mod)/40
+        meanx_est=meanx_est+x2[j]/40
+        meany_est=meany_est+x2[j+1]/40
+        meanx_mod=meanx_mod+x1[j]/40
+        meany_mod=meany_mod+x1[j+1]/40
+    Xt=meanx_est-meanx_mod
+    Yt=meany_est-meany_mod
     for j in range(0,80,2): 
             a=a+(x1[j] - meanx_mod)*(x2[j]-meanx_est)+(x1[j+1]- meany_mod)*(x2[j+1]-meany_est)
             c=c+(x1[j] - meanx_mod)*(x2[j+1]-meany_est)-(x1[j+1] - meany_mod)*(x2[j]-meanx_est)
@@ -208,8 +181,8 @@ def fit(data,vectors,mean):
         print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
         lengthx =x2-x1
         lengthy =y2-y1
-        vectorizedEdgeData = findVectorizedEdgeData(img,(x1-lengthx,y1-lengthy),(x2+lengthx,y2+lengthy))
-        visualize.displayVectorizedEdgeData(img, vectorizedEdgeData)
+        [array,vectorizedEdgeData] = findVectorizedEdgeData(img,(x1-lengthx/10,y1-lengthy/10),(x2+lengthx/10,y2+lengthy/10))
+        visualize.displayVectorizedEdgeData(img, array)
         genModel = adaptMean(mean,(x1,y1),(x2,y2))
         Xt =0
         Yt =0
@@ -221,39 +194,46 @@ def fit(data,vectors,mean):
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
         while True:
-            img2 = img.copy()
-            visualize.addLandmarks(img2, genModel,False)
-            img2=cv2.resize(img2,(1000,500))
-            cv2.imshow('img_res1',img2)
-            cv2.waitKey(0) 
+            #img2 = img.copy()
+            #visualize.addLandmarks(img2, genModel,False)
+            #img2=cv2.resize(img2,(1000,500))
+            #cv2.imshow('img_res1',img2)
+            #cv2.waitKey(0) 
             genModel2 = list(genModel)
             Xt2 =Xt
             Yt2 =Yt
             s2 =s
             angle2 =angle
             b2 =b
-            genModel = improve(genModel,vectorizedEdgeData)
-            img2 = img.copy()
-            visualize.addLandmarks(img2, genModel,False)
-            img2=cv2.resize(img2,(1000,500))
-            cv2.imshow('img_res2',img2)
-            cv2.waitKey(0) 
+            [genModel,Nedges] = improve2(genModel,vectorizedEdgeData,array)
+            #print genModel2-genModel
+            #sys.stdout.flush()
+            #img2 = img.copy()
+            #visualize.addLandmarks(img2, genModel,True)
+            #visualize.addLandmarks(img2, Nedges,True)
+            #img2=cv2.resize(img2,(1000,500))
+            #cv2.imshow('img_res2',img2)
+            #cv2.waitKey(0) 
         #step3 update paramaters
             [genModel,Xt, Yt, s, angle, b]= generateModel(vectors,mean,genModel)
-            img2 = img.copy()
-            visualize.addLandmarks(img2, genModel,False)
-            img2=cv2.resize(img2,(1000,500))
-            cv2.imshow('img_res3',img2)
-            cv2.waitKey(0) 
+            #img2 = img.copy()
+            #visualize.addLandmarks(img2, genModel,False)
+            #img2=cv2.resize(img2,(1000,500))
+            #cv2.imshow('img_res3',img2)
+            #cv2.waitKey(0) 
         #step4 check constraints
-           # if Xt>x2 or Xt<x1 or Yt>y2 or Yt<y1:
-            #    break
+            
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
         #b mag veranderen binnen gegeven grenzen
         #repeat from 2 until convergence
-            if max(abs(genModel2-genModel)) <0.01 and abs(Xt2-Xt) <0.01 and abs(Yt2-Yt) <0.01 and abs(s2-s) <0.01 and abs(angle2-angle) <0.01 and max(abs(b2-b)) <0.01:
+            #if max(abs(genModel2-genModel)) <0.01 and abs(Xt2-Xt) <0.01 and abs(Yt2-Yt) <0.01 and abs(s2-s) <0.01 and abs(angle2-angle) <0.01 and max(abs(b2-b)) <0.01:
+            if max(abs(genModel2-genModel)) <0.01:
                 #visualize genModel
-                
+                img2 = img.copy()
+                visualize.addLandmarks(img2, genModel,False)
+                img2=cv2.resize(img2,(1000,500))
+                cv2.imshow('img_res4',img2)
+                cv2.waitKey(0) 
                 break
     return
     
@@ -288,9 +268,32 @@ def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
         for y in range(y1,y2+1):
             if y>=0 and y< M and x>=0 and x< N and edges[y,x] != 0:
                 array.append((y,x))
-    return array
-
+    return [array,scipy.spatial.KDTree(array)]
+    
+def improve2(mean,vectorizedEdgeData,array):
+    res = np.zeros(80);
+    Nedges = np.zeros(80);
+    for l in range(0,80,2):
+        val = vectorizedEdgeData.query((mean[l+1],mean[l]))[0]
+        result=(mean[l+1],mean[l])
+        result2= vectorizedEdgeData.query((mean[l+1],mean[l]))[1]
+        for i in range(-1,2):
+            for j in range(-1,2):
+                if(val > vectorizedEdgeData.query((mean[l+1]+i,mean[l]+j))[0]):
+                    result=(mean[l+1]+i,mean[l]+j)
+                    val=vectorizedEdgeData.query((mean[l+1]+i,mean[l]+j))[0]
+                    result2 = vectorizedEdgeData.query((mean[l+1]+i,mean[l]+j))[1]
+        res[l]=result[1]
+        res[l+1]=result[0]
+        Nedges[l]=array[result2][1]
+        Nedges[l+1]=array[result2][0]
+    return [res,Nedges]
+    
+def distance(p1,p2):
+    return math.sqrt((p1[0]-p2[0])*(p1[0]-p2[0])+(p1[1]-p2[1])*(p1[1]-p2[1]))
+    
 def improve(mean,vectorizedEdgeData):
+    
     states = np.zeros((9,80))
     nedges = np.zeros((9,80))
     #initialisser met 9 nearestEdgePoints van 1ste punt? (mss sneller?)
