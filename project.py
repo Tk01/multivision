@@ -268,10 +268,12 @@ def adaptMean(mean,(x1,y1),(x2,y2)):
 def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
     filter_length = 5
     sigma = 1
-    result =scipy.signal.medfilt(img)
+    result = cv2.bilateralFilter(img,-12,17,17)
    # result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)    
-    
-    edges = cv2.Canny(np.uint8(result), 20, 55)
+    img2=cv2.resize(result,(1000,500))
+    cv2.imshow('img_filtered',img2)
+    cv2.waitKey(0)
+    edges = cv2.Canny(np.uint8(result), 1, 25)
 
     array = []
     [M,N] = np.shape(edges)
