@@ -7,6 +7,7 @@ import visualize
 import estimateClick
 import sys
 import scipy.spatial
+import scipy.signal
 #
 # Landmarks zijn (x1,y1,x2,y2,...) geordend, zie visualize (heb normaal deze fout verbeterd)
 #
@@ -99,7 +100,14 @@ def reallign(data):
             break 
     visualize.showReallignedData(data)
     return data
-    
+def generateModel2(P,mean,Y):
+    [Xt,Yt,s,angle] =allign(mean,Y)
+    y=np.zeros(80)
+    for j in range(0,80,2):
+        y[j] = math.cos(angle)*s*mean[j]-math.sin(angle)*mean[j+1]*s+Xt
+        y[j+1] = math.sin(angle)*s*mean[j]+math.cos(angle)*mean[j+1]*s+Yt
+    w=Y-y
+    return y+np.dot(P,np.linalg.lstsq(P,w)[0])  
     
 def generateModel(P,mean,Y):
     Xt=0
@@ -133,7 +141,7 @@ def generateModel(P,mean,Y):
        #if (abs(Xt) <0.01) and (abs(Yt) <0.01) and (abs(s) <0.01) and (abs(angle) <0.01) and (abs(max(b)) <0.01):
        #    break
        
-
+    
     for i in range(0,80,2):
         x1 = s*math.cos(angle)*x[i]-s*math.sin(angle)*(x[i+1])+Xt
         x2 = math.cos(angle)*(x[i+1])*s+math.sin(angle)*(x[i])*s+Yt
@@ -181,7 +189,7 @@ def fit(data,vectors,mean):
         print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
         lengthx =x2-x1
         lengthy =y2-y1
-        [array,vectorizedEdgeData] = findVectorizedEdgeData(img,(x1-lengthx/10,y1-lengthy/10),(x2+lengthx/10,y2+lengthy/10))
+        [array,vectorizedEdgeData] = findVectorizedEdgeData(img,(x1-lengthx,y1-lengthy),(x2+lengthx,y2+lengthy))
         visualize.displayVectorizedEdgeData(img, array)
         genModel = adaptMean(mean,(x1,y1),(x2,y2))
         Xt =0
@@ -206,21 +214,23 @@ def fit(data,vectors,mean):
             angle2 =angle
             b2 =b
             [genModel,Nedges] = improve2(genModel,vectorizedEdgeData,array)
-            #print genModel2-genModel
-            #sys.stdout.flush()
-            #img2 = img.copy()
-            #visualize.addLandmarks(img2, genModel,True)
-            #visualize.addLandmarks(img2, Nedges,True)
+            print genModel2-genModel
+            sys.stdout.flush()
+            img2 = img.copy()
+            visualize.addLandmarks(img2, genModel,True)
+            visualize.addLandmarks(img2, Nedges,True)
+            visualize.displayVectorizedEdgeData2(img2,array)
             #img2=cv2.resize(img2,(1000,500))
             #cv2.imshow('img_res2',img2)
             #cv2.waitKey(0) 
         #step3 update paramaters
-            [genModel,Xt, Yt, s, angle, b]= generateModel(vectors,mean,genModel)
-            #img2 = img.copy()
-            #visualize.addLandmarks(img2, genModel,False)
-            #img2=cv2.resize(img2,(1000,500))
-            #cv2.imshow('img_res3',img2)
-            #cv2.waitKey(0) 
+            genModel= generateModel2(vectors,mean,genModel)
+            
+            img2 = img.copy()
+            visualize.addLandmarks(img2, genModel,False)
+            img2=cv2.resize(img2,(1000,500))
+            cv2.imshow('img_res3',img2)
+            cv2.waitKey(0) 
         #step4 check constraints
             
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
@@ -256,11 +266,12 @@ def adaptMean(mean,(x1,y1),(x2,y2)):
     return mean
     
 def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
-    filter_length = 7
-    sigma = 2
-    result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)    
+    filter_length = 5
+    sigma = 1
+    result =scipy.signal.medfilt(img)
+   # result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)    
     
-    edges = cv2.Canny(result, 10 , 25)
+    edges = cv2.Canny(np.uint8(result), 20, 55)
 
     array = []
     [M,N] = np.shape(edges)

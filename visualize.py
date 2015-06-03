@@ -148,7 +148,15 @@ def displayVectorizedEdgeData(image, vectorizedEdgeData):
     cv2.imshow('img_res',img2)
     cv2.waitKey(0)
 
-
+def displayVectorizedEdgeData2(image, vectorizedEdgeData):
+    m,n = image.shape
+    img=image
+    for (x,y) in vectorizedEdgeData:
+        img[x,y] = 255
+    
+    img2=cv2.resize(img,(1000,500))
+    cv2.imshow('img_res',img2)
+    cv2.waitKey(0)
 if __name__ == '__main__':
     #showLandmarksOnAllRadioGraphs()
     #showLandmarksOnRadioGraph(1)
