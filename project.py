@@ -107,7 +107,15 @@ def generateModel2(P,mean,Y):
         y[j] = math.cos(angle)*s*mean[j]-math.sin(angle)*mean[j+1]*s+Xt
         y[j+1] = math.sin(angle)*s*mean[j]+math.cos(angle)*mean[j+1]*s+Yt
     w=Y-y
-    return y+np.dot(P,np.linalg.lstsq(P,w)[0])  
+    b=np.linalg.lstsq(P,w)[0]
+    b=b/np.linalg.norm(b)*min(np.linalg.norm(b),100)
+    print b
+    #absb =0
+    #for j in b:
+    #    absb = absb +abs(j)
+    #for i in range (1,14):
+    #   b[i]= b[i]/abs(b[i])*min(abs(b[i]),i/14*np.sum(absb)) 
+    return y+np.dot(P,b)  
     
 def generateModel(P,mean,Y):
     Xt=0
@@ -180,7 +188,7 @@ def getTestData():
     
 def fit(data,vectors,mean):
     #per image
-    for graphNumber in range(1,15):
+    for graphNumber in range(2,15):
         img = visualize.readRadiograph(graphNumber)
         
         #step1 ask estimate
@@ -198,15 +206,18 @@ def fit(data,vectors,mean):
         angle =0
         [l,t]=vectors.shape
         b=np.zeros(t) 
-    
+        counter=0
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
         while True:
-            #img2 = img.copy()
-            #visualize.addLandmarks(img2, genModel,False)
-            #img2=cv2.resize(img2,(1000,500))
-            #cv2.imshow('img_res1',img2)
-            #cv2.waitKey(0) 
+            #counter = counter +1
+            #if counter == 100:
+            #    img2 = img.copy()
+            #    visualize.addLandmarks(img2, genModel,False)
+            #    img2=cv2.resize(img2,(1000,500))
+            #    cv2.imshow('img_res1',img2)
+            #    cv2.waitKey(0) 
+            #    counter =0
             genModel2 = list(genModel)
             Xt2 =Xt
             Yt2 =Yt
@@ -216,21 +227,24 @@ def fit(data,vectors,mean):
             [genModel,Nedges] = improve2(genModel,vectorizedEdgeData,array)
             print genModel2-genModel
             sys.stdout.flush()
-            img2 = img.copy()
-            visualize.addLandmarks(img2, genModel,True)
-            visualize.addLandmarks(img2, Nedges,True)
-            visualize.displayVectorizedEdgeData2(img2,array)
-            #img2=cv2.resize(img2,(1000,500))
-            #cv2.imshow('img_res2',img2)
-            #cv2.waitKey(0) 
+            counter = counter +1
+            if counter == 100:
+                img2 = img.copy()
+                visualize.addLandmarks(img2, genModel,True)
+                visualize.addLandmarks(img2, Nedges,True)
+                visualize.displayVectorizedEdgeData2(img2,array)
+                img2=cv2.resize(img2,(1000,500))
+                cv2.imshow('img_res2',img2)
+                cv2.waitKey(0)
+                counter =0
         #step3 update paramaters
             genModel= generateModel2(vectors,mean,genModel)
             
-            img2 = img.copy()
-            visualize.addLandmarks(img2, genModel,False)
-            img2=cv2.resize(img2,(1000,500))
-            cv2.imshow('img_res3',img2)
-            cv2.waitKey(0) 
+            #img2 = img.copy()
+            #visualize.addLandmarks(img2, genModel,False)
+            #img2=cv2.resize(img2,(1000,500))
+            #cv2.imshow('img_res3',img2)
+            #cv2.waitKey(0) 
         #step4 check constraints
             
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
@@ -258,22 +272,34 @@ def adaptMean(mean,(x1,y1),(x2,y2)):
     for x in range(0,80,2):
         meanx[x/2]=mean[x]
         meany[x/2]=mean[x+1]
-    meanx=centerx + meanx*lengthx/(max(meanx)-min(meanx))
-    meany=centery + meany*lengthy/(max(meany)-min(meany))
+    meanx=centerx + meanx*lengthx/(max(meanx)-min(meanx))*0.75
+    meany=centery + meany*lengthy/(max(meany)-min(meany))*0.75
     for x in range(0,80,2):
         mean[x]=meanx[x/2]
         mean[x+1]=meany[x/2]
     return mean
     
 def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
+    #bovenkant
     filter_length = 5
     sigma = 1
-    result = cv2.bilateralFilter(img,-12,17,17)
-   # result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)    
+   # result = cv2.bilateralFilter(img,12,17,17)
+    result1 = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)  
+    edges1 = cv2.Canny(np.uint8(result1), 15, 30)
+    #onderkant
+    filter_length = 5
+    sigma = 1
+    result = cv2.bilateralFilter(img,12,17,17)
+    edges = cv2.Canny(np.uint8(result), 1, 45)
+    #result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)  
+    mid = (y1 + y2 ) / 2
+    
+    edges[0:mid][:] = edges1[0:mid][:]
+    
     img2=cv2.resize(result,(1000,500))
     cv2.imshow('img_filtered',img2)
     cv2.waitKey(0)
-    edges = cv2.Canny(np.uint8(result), 1, 25)
+    
 
     array = []
     [M,N] = np.shape(edges)
