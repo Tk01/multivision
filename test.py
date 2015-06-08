@@ -26,13 +26,17 @@ def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
     filter_length = 5
     sigma = 1
    # result = cv2.bilateralFilter(img,12,17,17)
-    result1 = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)  
-    edges1 = cv2.Canny(np.uint8(result1), 15, 30)
+    result1 = cv2.adaptiveBilateralFilter(img,(13,13),13)  
+    #cv2.imshow('img_res',result1)
+    #cv2.waitKey(0)
+    edges1 = cv2.Canny(np.uint8(result1), 1, 15,L2gradient=True)
     #onderkant
     filter_length = 5
     sigma = 1
-    result = cv2.bilateralFilter(img,12,17,17)
-    edges = cv2.Canny(np.uint8(result), 1, 45)
+    result = cv2.bilateralFilter(img  ,9,20,20)
+    #cv2.imshow('img_res',result1)
+    #cv2.waitKey(0)
+    edges = cv2.Canny(np.uint8(result), 1, 20,L2gradient=True)
     #result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)  
     mid = (y1 + y2 ) / 2
     

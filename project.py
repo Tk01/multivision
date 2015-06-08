@@ -190,7 +190,7 @@ def fit(data,vectors,mean):
     #per image
     for graphNumber in range(2,15):
         img = visualize.readRadiograph(graphNumber)
-        
+        img3 = cv2.bilateralFilter(img  ,9,20,20) 
         #step1 ask estimate
         
         [(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
@@ -224,15 +224,13 @@ def fit(data,vectors,mean):
             s2 =s
             angle2 =angle
             b2 =b
-            [genModel,Nedges] = improve2(genModel,vectorizedEdgeData,array)
+            genModel = improve(img3,genModel)
             print genModel2-genModel
             sys.stdout.flush()
             counter = counter +1
-            if counter == 100:
-                img2 = img.copy()
+            if counter == 10:
+                img2 = img3.copy()
                 visualize.addLandmarks(img2, genModel,True)
-                visualize.addLandmarks(img2, Nedges,True)
-                visualize.displayVectorizedEdgeData2(img2,array)
                 img2=cv2.resize(img2,(1000,500))
                 cv2.imshow('img_res2',img2)
                 cv2.waitKey(0)
@@ -260,7 +258,7 @@ def fit(data,vectors,mean):
                 cv2.waitKey(0) 
                 break
     return
-    
+  
 def adaptMean(mean,(x1,y1),(x2,y2)):
     mean = list(mean)
     lengthx = x2-x1
@@ -331,40 +329,52 @@ def improve2(mean,vectorizedEdgeData,array):
 def distance(p1,p2):
     return math.sqrt((p1[0]-p2[0])*(p1[0]-p2[0])+(p1[1]-p2[1])*(p1[1]-p2[1]))
     
-def improve(mean,vectorizedEdgeData):
+def improve(img,mean):
     
+    meanD=0
+    for m in range(2,80,2):
+        meanD=meanD=distance((mean[m],mean[m+1]),(mean[m-2],mean[m-1]))/39
+    sobelx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
+    sobely = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
     states = np.zeros((9,80))
-    nedges = np.zeros((9,80))
     #initialisser met 9 nearestEdgePoints van 1ste punt? (mss sneller?)
     for l in range(0,80,2):
         copyS = np.copy(states)#copy voor for i ? (want nu verlies je 1 van de 9
-        copyN = np.copy(nedges)# mogelijkheden doordat je 1 naar andere kopieert aan eind
         for i in range(-1,2):
             for j in range(-1,2):
-                nPoint = nearestEdgePoint(mean[l]+i,mean[l+1]+j,vectorizedEdgeData)
                 
                 copyS[:,l]=mean[l]+i
-                copyS[:,l+1]=mean[l+1]+j
-                copyN[:,l]=nPoint[0]
-                copyN[:,l+1]=nPoint[1]
-                
-                minv= np.linalg.norm(copyS[0,:]-copyN[0,:])
+                copyS[:,l+1]=mean[l+1]+j                
+                minv=intenerg(l,copyS[0],meanD)+ extenerg(copyS[0],sobelx,sobely,l )
                 minState=copyS[0,:]
-                minNEdge=copyN[0,:]
                 for k in range (1,9):
-                    if minv > np.linalg.norm(copyS[k,:]-copyN[k,:]):
-                        minv= np.linalg.norm(copyS[k,:]-copyN[k,:])
+                    if minv > intenerg(l,copyS[k],meanD)+ extenerg(copyS[k],sobelx,sobely,l ):
+                        minv= intenerg(l,copyS[k],meanD)+ extenerg(copyS[k],sobelx,sobely,l )
                         minState=copyS[k,:]
-                        minNEdge=copyN[k,:]
                 states[3*(i+1)+j+1,:]=minState
-                nedges[3*(i+1)+j+1,:]=minNEdge
-    minv= np.linalg.norm(states[0,:]-nedges[0,:])
+    minv= intenerg(78,copyS[0],meanD)+ extenerg(copyS[0],sobelx,sobely,78 )
     minState=states[0,:]
     for k in range (1,9):
-        if minv > np.linalg.norm(states[k,:]-nedges[k,:]):
-                minv= np.linalg.norm(states[k,:]-nedges[k,:])
+        if minv > intenerg(78,copyS[k],meanD)+ extenerg(copyS[k],sobelx,sobely,78 ):
+                minv= intenerg(78,copyS[k],meanD)+ extenerg(copyS[k],sobelx,sobely,78 )
                 minState=states[k,:]
     return minState
+def intenerg(l,copyS,meanD):
+    
+    res1=0
+    for i in range (2,l+1,2):
+        res1=res1+(meanD-(copyS[i]-copyS[i-2])*(copyS[i]-copyS[i-2])+(copyS[i+1]-copyS[i-1])*(copyS[i+1]-copyS[i-1]))
+    res2=0
+    for i in range (4,l+1,2):
+        res2=res2 + (copyS[i]-2*copyS[i-2]+copyS[i-4])*(copyS[i]-2*copyS[i-2]+copyS[i-4])+(copyS[i+1]-2*copyS[i-1]+copyS[i-3])*(copyS[i+1]-2*copyS[i-1]+copyS[i-3])
+    return  res1+res2
+    
+def extenerg(copyS,sobelx,sobely,l ):
+    res=0
+    for i in range(2,l,2):
+        res=res-2*np.linalg.norm([sobelx[copyS[l]][copyS[l+1]],sobely[copyS[l]][copyS[l+1]]])*math.cos(math.atan(sobely[copyS[l]][copyS[l+1]]/sobelx[copyS[l]][copyS[l+1]]) - (math.atan((copyS[l+1]-copyS[l-1])/(copyS[l]-copyS[l-2]))-math.pi/2))
+    return res
+  
 
 def nearestEdgePoint(x,y,vectors):
     minv=(x-vectors[0][0])*(x-vectors[0][0])+(y-vectors[0][1])*(y-vectors[0][1])
