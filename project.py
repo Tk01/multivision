@@ -115,7 +115,10 @@ def generateModel2(P,mean,Y):
     #    absb = absb +abs(j)
     #for i in range (1,14):
     #   b[i]= b[i]/abs(b[i])*min(abs(b[i]),i/14*np.sum(absb)) 
-    return y+np.dot(P,b)  
+    xret=y+np.dot(P,b)
+    for i in range(0,80):
+        xret[i] =int(round(xret[i]))
+    return xret  
     
 def generateModel(P,mean,Y):
     Xt=0
@@ -190,7 +193,7 @@ def fit(data,vectors,mean):
     #per image
     for graphNumber in range(2,15):
         img = visualize.readRadiograph(graphNumber)
-        img3 = cv2.bilateralFilter(img  ,9,20,20) 
+        img3 = img#cv2.equalizeHist(img)
         #step1 ask estimate
         
         [(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
@@ -207,6 +210,7 @@ def fit(data,vectors,mean):
         [l,t]=vectors.shape
         b=np.zeros(t) 
         counter=0
+        var = 50
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
         while True:
@@ -218,6 +222,10 @@ def fit(data,vectors,mean):
             #    cv2.imshow('img_res1',img2)
             #    cv2.waitKey(0) 
             #    counter =0
+            if(counter==0 ):
+                genModelvar = list(genModel)
+                for i in range(0,80):
+                    genModelvar[i]=int(round(genModelvar[i]))
             genModel2 = list(genModel)
             Xt2 =Xt
             Yt2 =Yt
@@ -225,31 +233,34 @@ def fit(data,vectors,mean):
             angle2 =angle
             b2 =b
             genModel = improve(img3,genModel)
-            print genModel2-genModel
-            sys.stdout.flush()
+            #sys.stdout.flush()
             counter = counter +1
-            if counter == 10:
-                img2 = img3.copy()
-                visualize.addLandmarks(img2, genModel,True)
-                img2=cv2.resize(img2,(1000,500))
-                cv2.imshow('img_res2',img2)
-                cv2.waitKey(0)
-                counter =0
+            print counter
+            #if counter == 500:
+            #    img2 = img3.copy()
+            #    visualize.addLandmarks(img2, genModel,True)
+            #    img2=cv2.resize(img2,(1000,500))
+            #    cv2.imshow('img_res2',img2)
+            #    cv2.waitKey(0)
+            #    counter =0
         #step3 update paramaters
             genModel= generateModel2(vectors,mean,genModel)
-            
             #img2 = img.copy()
             #visualize.addLandmarks(img2, genModel,False)
             #img2=cv2.resize(img2,(1000,500))
             #cv2.imshow('img_res3',img2)
             #cv2.waitKey(0) 
         #step4 check constraints
-            
+            print genModelvar - genModel
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
         #b mag veranderen binnen gegeven grenzen
         #repeat from 2 until convergence
             #if max(abs(genModel2-genModel)) <0.01 and abs(Xt2-Xt) <0.01 and abs(Yt2-Yt) <0.01 and abs(s2-s) <0.01 and abs(angle2-angle) <0.01 and max(abs(b2-b)) <0.01:
-            if max(abs(genModel2-genModel)) <0.01:
+            diff=0
+            for i in range(0,80,2):
+                if not (genModel2[i] == genModel[i] and genModel2[i+1] == genModel[i+1]):
+                        diff =diff+1
+            if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
                 #visualize genModel
                 img2 = img.copy()
                 visualize.addLandmarks(img2, genModel,False)
@@ -257,6 +268,8 @@ def fit(data,vectors,mean):
                 cv2.imshow('img_res4',img2)
                 cv2.waitKey(0) 
                 break
+            if(counter == var):
+                counter =0
     return
   
 def adaptMean(mean,(x1,y1),(x2,y2)):
@@ -367,13 +380,13 @@ def intenerg(l,copyS,meanD):
     res2=0
     for i in range (4,l+1,2):
         res2=res2 + (copyS[i]-2*copyS[i-2]+copyS[i-4])*(copyS[i]-2*copyS[i-2]+copyS[i-4])+(copyS[i+1]-2*copyS[i-1]+copyS[i-3])*(copyS[i+1]-2*copyS[i-1]+copyS[i-3])
-    return  res1+res2
+    return  (0.5*res1+res2)
     
 def extenerg(copyS,sobelx,sobely,l ):
     res=0
     for i in range(2,l,2):
-        res=res-2*np.linalg.norm([sobelx[copyS[l]][copyS[l+1]],sobely[copyS[l]][copyS[l+1]]])*math.cos(math.atan(sobely[copyS[l]][copyS[l+1]]/sobelx[copyS[l]][copyS[l+1]]) - (math.atan((copyS[l+1]-copyS[l-1])/(copyS[l]-copyS[l-2]))-math.pi/2))
-    return res
+        res=res-np.linalg.norm([sobelx[copyS[l]][copyS[l+1]],sobely[copyS[l]][copyS[l+1]]])*math.cos(math.atan(sobely[copyS[l]][copyS[l+1]]/sobelx[copyS[l]][copyS[l+1]]) - (math.atan((copyS[l+1]-copyS[l-1])/(copyS[l]-copyS[l-2]))+math.pi/2))
+    return 5*res
   
 
 def nearestEdgePoint(x,y,vectors):
