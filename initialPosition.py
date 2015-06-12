@@ -34,7 +34,7 @@ def reconstruct(W, Y, mu):
     
     return resultImage    
         
-def pca(X, nb_components=0):
+def pca(X, size1,size2, nb_components=0):
     '''
     Do a PCA analysis on X
     @param X:                np.array containing the samples
@@ -73,8 +73,8 @@ def pca(X, nb_components=0):
                                  normalize(eigenvectors[:,2].reshape(size2,size1)))
                                ).astype(np.uint8)
     imm = cv2.resize(ii,(1500,400), interpolation=cv2.INTER_NEAREST)
-    cv2.imshow('pca',imm)
-    cv2.waitKey(0) 
+    #cv2.imshow('pca',imm)
+    #cv2.waitKey(0) 
     
     return [eigenvalues, eigenvectors, mean]
     
@@ -142,8 +142,8 @@ def makeData(resize1 = 500, resize2 = 500):
         #cv2.imshow('img' + str(i) ,np.uint8(results[i,:,:]))
         #cv2.waitKey(0)
     reAll = cv2.resize(allImages,(1500,750), interpolation=cv2.INTER_NEAREST)
-    cv2.imshow('all initialization images' ,np.uint8(reAll))
-    cv2.waitKey(0)
+    #cv2.imshow('all initialization images' ,np.uint8(reAll))
+    #cv2.waitKey(0)
     
     return smallImages   
        
@@ -152,7 +152,7 @@ def findPosition(mean, eigenvectors, image, size1, size2):
     m,n = image.shape
     
     best = 100000000
-    bestPos = (-1,-1)
+    bestKader = [(-1,-1),(-1,-1)]
     bestIm = np.zeros((500,400))
     #try different sizes
     for size11 in range(16,21,2):
@@ -161,8 +161,8 @@ def findPosition(mean, eigenvectors, image, size1, size2):
             s2 = int(size2 * size22 / 20)
             
             
-            a1 = int(m / 2 - m / 10)
-            a2 = int(m / 2 + m / 4)
+            a1 = int(m / 2 - m / 8)
+            a2 = int(m / 2 + m / 8)
             aStep = 40
             b1 = int(n / 2 - n / 16)
             b2 = int(n / 2 + n / 16)
@@ -190,14 +190,14 @@ def findPosition(mean, eigenvectors, image, size1, size2):
                         #cv2.imshow(str(size11)+ ' - ' + str(size22) + '  /  ' + str(i) + ' - ' + str(j) ,reCut)
                         #cv2.waitKey(0)
                         best = np.linalg.norm(reX-X)
+                        bestKader = [(min1,min2),(max1,max2)]
                         bestIm = reCut
-                        print best
+                        #print best
                         sys.stdout.flush()
                         
-                        bestPos =  (i,j)
-            print str(s1) + " - " + str(s2)
+            #print str(s1) + " - " + str(s2)
             sys.stdout.flush()                
-    return (bestPos,bestIm)
+    return (bestKader,bestIm)
 
 def testMatch(mean, vectors):
     
@@ -216,33 +216,44 @@ def testMatch(mean, vectors):
     
     print np.linalg.norm(reX-X)
     sys.stdout.flush()
-    cv2.imshow('img' ,reCut)
-    cv2.waitKey(0)
+    #cv2.imshow('img' ,reCut)
+    #cv2.waitKey(0)
 
 
+def findPositionFor(graphNumber, tooth):
+    
+    size1 = 500
+    size2 = 400
+    data = makeData(size1,size2)
+    [eigenvalues, eigenvectors, mean] = pca(data,size1,size2,5)
+    img = visualize.readRadiograph(graphNumber)
+    [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2)
+    
+    return [( b +(tooth-1)*(d-b)/4,a),(b +(tooth)*(d-b)/4,c)]
 
 if __name__ == '__main__':
     size1 = 500
     size2 = 400
     data = makeData(size1,size2)
-    [eigenvalues, eigenvectors, mean] = pca(data)
+    [eigenvalues, eigenvectors, mean] =  pca(data,size1,size2,5)
 
     
     #testMatch(mean,eigenvectors)
     
     allImages = np.zeros((size2 * 3, size1*5))
     
-    for graphNumber in range(1,15):
+    
+    for graphNumber in range(1,2):
          img = visualize.readRadiograph(graphNumber)
-         (a,b),im = findPosition(mean, eigenvectors, img, size1, size2)
-         print str(a) + " - " + str(b)
+         [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2)
+         print str(a) + ',' + str(b) + " - " + str(c)+','+str(d)
          sys.stdout.flush()
          i = graphNumber - 1
          row = int(round(i / 5))
          col = i % 5
          allImages[size2*row:size2*(row+1),size1*col:size1*(col+1)] = im
     
-    cv2.imwrite('allResultss.jpg',np.uint8(allImages))
+    cv2.imwrite('/Results/allResultss.jpg',np.uint8(allImages))
     
     cv2.imshow('all results of findPosition' ,np.uint8(allImages))
     cv2.waitKey(0)

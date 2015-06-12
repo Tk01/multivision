@@ -8,10 +8,15 @@ import estimateClick
 import sys
 import scipy.spatial
 import scipy.signal
+import initialPosition
 #
 # Landmarks zijn (x1,y1,x2,y2,...) geordend, zie visualize (heb normaal deze fout verbeterd)
 #
 numbersOfVectors = 6
+iWeight1 = 1
+iWeight2 = 1
+
+
 def getModelData():
     result= np.zeros((80,14))
     for i in range(14):
@@ -37,7 +42,7 @@ def reallign(data):
     #3. Record the first estimate as x0 to define the default orientation.
     x0=example
     while True:
-        visualize.showReallignedData(data)
+        #visualize.showReallignedData(data)
         examplestored=example
         #4. Align all the shapes with the current estimate of the mean shape.
         '''
@@ -99,7 +104,7 @@ def reallign(data):
         #7. If not converged, return to 4.
         if max(abs(example-examplestored))<0.01 :
             break 
-    visualize.showReallignedData(data)
+    #visualize.showReallignedData(data)
     return data
 def generateModel2(P,mean,Y):
     [Xt,Yt,s,angle] =allign(mean,Y)
@@ -110,7 +115,7 @@ def generateModel2(P,mean,Y):
     w=Y-y
     b=np.linalg.lstsq(P,w)[0]
     b=b/np.linalg.norm(b)*min(np.linalg.norm(b),100)
-    print b
+    #print b
     #absb =0
     #for j in b:
     #    absb = absb +abs(j)
@@ -192,17 +197,19 @@ def getTestData():
     
 def fit(data,vectors,mean):
     #per image
-    for graphNumber in range(2,15):
+    for graphNumber in range(1,15,7):
         img = visualize.readRadiograph(graphNumber)
         img3 = img#cv2.equalizeHist(img)
         #step1 ask estimate
         
-        [(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
-        print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
+        #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
+        [(x1,y1),(x2,y2)] = initialPosition.findPositionFor(graphNumber,1)
+        
+        #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
         lengthx =x2-x1
         lengthy =y2-y1
-        [array,vectorizedEdgeData] = findVectorizedEdgeData(img,(x1-lengthx,y1-lengthy),(x2+lengthx,y2+lengthy))
-        visualize.displayVectorizedEdgeData(img, array)
+        #[array,vectorizedEdgeData] = findVectorizedEdgeData(img,(x1-lengthx,y1-lengthy),(x2+lengthx,y2+lengthy))
+        #visualize.displayVectorizedEdgeData(img, array)
         genModel = adaptMean(mean,(x1,y1),(x2,y2))
         Xt =0
         Yt =0
@@ -236,7 +243,7 @@ def fit(data,vectors,mean):
             genModel = improve(img3,genModel)
             #sys.stdout.flush()
             counter = counter +1
-            print counter
+            #print counter
             #if counter == 500:
             #    img2 = img3.copy()
             #    visualize.addLandmarks(img2, genModel,True)
@@ -252,7 +259,7 @@ def fit(data,vectors,mean):
             #cv2.imshow('img_res3',img2)
             #cv2.waitKey(0) 
         #step4 check constraints
-            print genModelvar - genModel
+            #print genModelvar - genModel
         #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
         #b mag veranderen binnen gegeven grenzen
         #repeat from 2 until convergence
@@ -266,8 +273,9 @@ def fit(data,vectors,mean):
                 img2 = img.copy()
                 visualize.addLandmarks(img2, genModel,False)
                 img2=cv2.resize(img2,(1000,500))
-                cv2.imshow('img_res4',img2)
-                cv2.waitKey(0) 
+                #cv2.imshow('img_res4',img2)
+                #cv2.waitKey(0) 
+                cv2.imwrite('Results/' + str(graphNumber) + ',' + str(numberOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
                 break
             if(counter == var):
                 counter =0
@@ -347,7 +355,7 @@ def improve(img,mean):
     
     meanD=0
     for m in range(2,80,2):
-        meanD=meanD=distance((mean[m],mean[m+1]),(mean[m-2],mean[m-1]))/39
+        meanD=meanD+distance((mean[m],mean[m+1]),(mean[m-2],mean[m-1]))/39
     sobelx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
     sobely = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
     states = np.zeros((9,80))
@@ -374,20 +382,20 @@ def improve(img,mean):
                 minState=states[k,:]
     return minState
 def intenerg(l,copyS,meanD):
-    
+    global iWeight1, iWeight2
     res1=0
     for i in range (2,l+1,2):
         res1=res1+(meanD-(copyS[i]-copyS[i-2])*(copyS[i]-copyS[i-2])+(copyS[i+1]-copyS[i-1])*(copyS[i+1]-copyS[i-1]))
     res2=0
     for i in range (4,l+1,2):
         res2=res2 + (copyS[i]-2*copyS[i-2]+copyS[i-4])*(copyS[i]-2*copyS[i-2]+copyS[i-4])+(copyS[i+1]-2*copyS[i-1]+copyS[i-3])*(copyS[i+1]-2*copyS[i-1]+copyS[i-3])
-    return  (0.5*res1+res2)
+    return  (iWeight1*res1+iWeight2 * res2)
     
 def extenerg(copyS,sobelx,sobely,l ):
     res=0
     for i in range(2,l,2):
         res=res-np.linalg.norm([sobelx[copyS[l]][copyS[l+1]],sobely[copyS[l]][copyS[l+1]]])*math.cos(math.atan(sobely[copyS[l]][copyS[l+1]]/sobelx[copyS[l]][copyS[l+1]]) - (math.atan((copyS[l+1]-copyS[l-1])/(copyS[l]-copyS[l-2]))+math.pi/2))
-    return 5*res
+    return res
   
 
 def nearestEdgePoint(x,y,vectors):
@@ -440,7 +448,18 @@ def PCA(data, nb_components = 0):
 if __name__ == '__main__':
     data = getModelData()
     reallignedData = reallign(data)
-    [values, vectors, mean] = PCA(reallignedData,numbersOfVectors)
-    testData = getTestData()
-    result = fit(reallignedData, vectors, mean)
+    
+    #kevin oneven numberOfVectors 1,3,5,..
+    #tim even numberOfVectors 2,4,6,...
+    
+    for i in range(1,15,2):
+        numberOfVectors = i
+        for j in range(0,20,4):
+            iWeight1 = (1.0*j)/10
+            for K in range(0,20,4):
+                iWeight2 = (1.0*K)/10
+                print str(numberOfVectors)+',' + str(iWeight1)+',' + str(iWeight2)
+                [values, vectors, mean] = PCA(reallignedData,numbersOfVectors)
+                testData = getTestData()
+                result = fit(reallignedData, vectors, mean)
     
