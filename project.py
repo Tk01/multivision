@@ -11,6 +11,7 @@ import scipy.signal
 #
 # Landmarks zijn (x1,y1,x2,y2,...) geordend, zie visualize (heb normaal deze fout verbeterd)
 #
+numbersOfVectors = 6
 def getModelData():
     result= np.zeros((80,14))
     for i in range(14):
@@ -439,7 +440,7 @@ def PCA(data, nb_components = 0):
 if __name__ == '__main__':
     data = getModelData()
     reallignedData = reallign(data)
-    [values, vectors, mean] = PCA(reallignedData)
+    [values, vectors, mean] = PCA(reallignedData,numbersOfVectors)
     testData = getTestData()
     result = fit(reallignedData, vectors, mean)
     
