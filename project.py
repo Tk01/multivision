@@ -354,8 +354,12 @@ def distance(p1,p2):
 def improve(img,mean):
     
     meanD=0
-    for m in range(2,80,2):
-        meanD=meanD+distance((mean[m],mean[m+1]),(mean[m-2],mean[m-1]))/39
+    hi=0
+    for m in range(0,80,2):
+        for n in range(m,80,2):
+            meanD=meanD+distance((mean[m],mean[m+1]),(mean[n],mean[n+1]))
+            hi=hi+1
+    meanD=meanD/hi
     sobelx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
     sobely = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
     states = np.zeros((9,80))
