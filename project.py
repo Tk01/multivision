@@ -356,7 +356,7 @@ def improve(img,mean):
     meanD=0
     hi=0
     for m in range(0,80,2):
-        for n in range(m,80,2):
+        for n in range(m+2,80,2):
             meanD=meanD+distance((mean[m],mean[m+1]),(mean[n],mean[n+1]))
             hi=hi+1
     meanD=meanD/hi
