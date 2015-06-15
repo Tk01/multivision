@@ -353,7 +353,7 @@ def distance(p1,p2):
     return math.sqrt((p1[0]-p2[0])*(p1[0]-p2[0])+(p1[1]-p2[1])*(p1[1]-p2[1]))
     
 def improve(img,mean,sobelx,sobely):
-    
+    [o,p] =np.shape(img)
     meanD=0
     hi=0
     for m in range(0,80,2):
@@ -367,9 +367,8 @@ def improve(img,mean,sobelx,sobely):
         copyS = np.copy(states)#copy voor for i ? (want nu verlies je 1 van de 9
         for i in range(-1,2):
             for j in range(-1,2):
-                
-                copyS[:,l]=mean[l]+i
-                copyS[:,l+1]=mean[l+1]+j                
+                copyS[:,l]=min(o-1,max(0,mean[l]+i))
+                copyS[:,l+1]=min(p-1,max(0,mean[l]+j))                
                 minv=intenerg(l,copyS[0],meanD)+ extenerg(copyS[0],sobelx,sobely,l )
                 minState=copyS[0,:]
                 for k in range (1,9):
