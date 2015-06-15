@@ -195,15 +195,14 @@ def getTestData():
     return
     
     
-def fit(data,vectors,mean):
+def fit(data,vectors,mean, img,sobelx,sobely,p1):
     #per image
-    for graphNumber in range(1,15,7):
-        img = visualize.readRadiograph(graphNumber)
+    #for graphNumber in range(1,15):
         img3 = img#cv2.equalizeHist(img)
         #step1 ask estimate
-        
+        [(x1,y1),(x2,y2)]=p1
         #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
-        [(x1,y1),(x2,y2)] = initialPosition.findPositionFor(graphNumber,1)
+        
         
         #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
         lengthx =x2-x1
@@ -218,6 +217,8 @@ def fit(data,vectors,mean):
         [l,t]=vectors.shape
         b=np.zeros(t) 
         counter=0
+        
+        
         var = 50
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
@@ -240,7 +241,7 @@ def fit(data,vectors,mean):
             s2 =s
             angle2 =angle
             b2 =b
-            genModel = improve(img3,genModel)
+            genModel = improve(img3,genModel,sobelx,sobely)
             #sys.stdout.flush()
             counter = counter +1
             #print counter
@@ -275,11 +276,11 @@ def fit(data,vectors,mean):
                 img2=cv2.resize(img2,(1000,500))
                 #cv2.imshow('img_res4',img2)
                 #cv2.waitKey(0) 
-                cv2.imwrite('Results/' + str(graphNumber) + ',' + str(numberOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
+                cv2.imwrite('Results/' + str(1) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
                 break
             if(counter == var):
                 counter =0
-    return
+        return
   
 def adaptMean(mean,(x1,y1),(x2,y2)):
     mean = list(mean)
@@ -351,7 +352,7 @@ def improve2(mean,vectorizedEdgeData,array):
 def distance(p1,p2):
     return math.sqrt((p1[0]-p2[0])*(p1[0]-p2[0])+(p1[1]-p2[1])*(p1[1]-p2[1]))
     
-def improve(img,mean):
+def improve(img,mean,sobelx,sobely):
     
     meanD=0
     hi=0
@@ -360,8 +361,6 @@ def improve(img,mean):
             meanD=meanD+distance((mean[m],mean[m+1]),(mean[n],mean[n+1]))
             hi=hi+1
     meanD=meanD/hi
-    sobelx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
-    sobely = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
     states = np.zeros((9,80))
     #initialisser met 9 nearestEdgePoints van 1ste punt? (mss sneller?)
     for l in range(0,80,2):
@@ -452,18 +451,21 @@ def PCA(data, nb_components = 0):
 if __name__ == '__main__':
     data = getModelData()
     reallignedData = reallign(data)
-    
+    img = visualize.readRadiograph(1)
+    p1 = initialPosition.findPositionFor(1,1)
     #kevin oneven numberOfVectors 1,3,5,..
     #tim even numberOfVectors 2,4,6,...
-    
-    for i in range(1,15,2):
-        numberOfVectors = i
+    sobelx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
+    sobely = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
+    for i in range(2,15,2):
+        numbersOfVectors = i
         for j in range(0,20,4):
             iWeight1 = (1.0*j)/10
             for K in range(0,20,4):
                 iWeight2 = (1.0*K)/10
-                print str(numberOfVectors)+',' + str(iWeight1)+',' + str(iWeight2)
+                print str(numbersOfVectors)+',' + str(iWeight1)+',' + str(iWeight2)
+                sys.stdout.flush()
                 [values, vectors, mean] = PCA(reallignedData,numbersOfVectors)
                 testData = getTestData()
-                result = fit(reallignedData, vectors, mean)
+                result = fit(reallignedData, vectors, mean,img,sobelx,sobely,p1)
     
