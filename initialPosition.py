@@ -4,79 +4,41 @@ import visualize
 import estimateClick
 import sys
     
-def project(W, X, mu):
-    '''
-    Project X on the space spanned by the vectors in W.
-    mu is the average image.
-    '''
-    d,n = W.shape
-    result = np.zeros(n)
-    
-    XminMu = X - mu
-    
-    for i in range(0,n):
-        result[i] = np.dot(np.transpose(W[:,i]),XminMu)
-        
-    return result
+def project(W, X, mu=None):
+    if mu is None:
+        return np.dot(X,W)
+    return np.dot(X - mu, W)
 
-def reconstruct(W, Y, mu):
-    '''
-    Reconstruct an image based on its PCA-coefficients Y, the eigenvectors W and the average mu.
-    '''
-    
-    resultImage = np.zeros(len(mu))
+def reconstruct(W, Y, mu=None):
+    if mu is None:
+        return np.dot(Y,W.T)
+    return np.dot(Y, W.T) + mu
 
-    
-    for i in range(0,len(Y)):
-        resultImage = resultImage + (Y[i] * W[:,i])
-    
-    resultImage = resultImage + mu
-    
-    return resultImage    
-        
-def pca(X, size1,size2, nb_components=0):
-    '''
-    Do a PCA analysis on X
-    @param X:                np.array containing the samples
-                             shape = (nb samples, nb dimensions of each sample)
-    @param nb_components:    the nb components we're interested in
-    @return: return the nb_components largest eigenvalues and eigenvectors of the covariance matrix and return the average sample 
-    '''
+def pca(X, num_components=0):
     [n,d] = X.shape
-    if (nb_components <= 0) or (nb_components>n):
-        nb_components = n
-    
-    mean = np.average(X,axis=0)
-    
-    XminMean = np.zeros((d,n))
-    for i in range(0,n):
-        XminMean[:,i] = X[i] - mean
-    xtx = np.dot(np.transpose(XminMean),XminMean)
-    
-    values, vectors = np.linalg.eig(xtx)
-    
-    values,vectorList = (list(x) for x in zip(*sorted(zip(values, range(0,n)), key=lambda pair: pair[0], reverse=True)))
-    
-    eigenvalues = values[:nb_components]
-    eigenvectorsTemp = np.zeros((n,nb_components))
-    for i in range(0,nb_components):
-        eigenvectorsTemp[:,i] = vectors[:,vectorList[i]]
-    
-    eigenvectors = np.zeros((d,nb_components))
-    for i in range(0,nb_components):
-        v = np.dot(XminMean,eigenvectorsTemp[:,i])
-        eigenvectors[:,i] = v/np.linalg.norm(v)
-    
-    ii = np.hstack( (mean.reshape(size2,size1),
-                                 normalize(eigenvectors[:,0].reshape(size2,size1)),
-                                 normalize(eigenvectors[:,1].reshape(size2,size1)),
-                                 normalize(eigenvectors[:,2].reshape(size2,size1)))
-                               ).astype(np.uint8)
-    imm = cv2.resize(ii,(1500,400), interpolation=cv2.INTER_NEAREST)
-    #cv2.imshow('pca',imm)
-    #cv2.waitKey(0) 
-    
-    return [eigenvalues, eigenvectors, mean]
+    if (num_components <= 0) or (num_components>n):
+        num_components = n
+    mu = X.mean(axis=0)
+    X = X - mu
+    if n>d:
+        C = np.dot(X.T,X)
+        [eigenvalues,eigenvectors] = np.linalg.eigh(C)
+    else:
+        C = np.dot(X,X.T)
+        [eigenvalues,eigenvectors] = np.linalg.eigh(C)
+        eigenvectors = np.dot(X.T,eigenvectors)
+        for i in xrange(n):
+            eigenvectors[:,i] = eigenvectors[:,i]/np.linalg.norm(eigenvectors[:,i])
+    # or simply perform an economy size decomposition
+    # eigenvectors, eigenvalues, variance = np.linalg.svd(X.T, full_matrices=False)
+    # sort eigenvectors descending by their eigenvalue
+    idx = np.argsort(-eigenvalues)
+    eigenvalues = eigenvalues[idx]
+    eigenvectors = eigenvectors[:,idx]
+    # select only num_components
+    eigenvalues = eigenvalues[0:num_components].copy()
+    eigenvectors = eigenvectors[:,0:num_components].copy()
+    return [eigenvalues, eigenvectors, mu]
     
 def normalize(img):
     '''
@@ -225,7 +187,7 @@ def findPositionFor(graphNumber, tooth):
     size1 = 500
     size2 = 400
     data = makeData(size1,size2)
-    [eigenvalues, eigenvectors, mean] = pca(data,size1,size2,5)
+    [eigenvalues, eigenvectors, mean] = pca(data,5)
     img = visualize.readRadiograph(graphNumber)
     [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2)
     
@@ -235,7 +197,7 @@ if __name__ == '__main__':
     size1 = 500
     size2 = 400
     data = makeData(size1,size2)
-    [eigenvalues, eigenvectors, mean] =  pca(data,size1,size2,5)
+    [eigenvalues, eigenvectors, mean] =  pca(data,5)
 
     
     #testMatch(mean,eigenvectors)

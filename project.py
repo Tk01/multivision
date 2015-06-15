@@ -195,14 +195,15 @@ def getTestData():
     return
     
     
-def fit(data,vectors,mean, img,sobelx,sobely,p1):
+def fit(data,vectors,mean,sobelx,sobely,p1):
     #per image
-    #for graphNumber in range(1,15):
+    for graphNumber in range(1,15,15):
+        img = visualize.readRadiograph(graphNumber)
         img3 = img#cv2.equalizeHist(img)
         #step1 ask estimate
-        [(x1,y1),(x2,y2)]=p1
-        #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
         
+        #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
+        [(x1,y1),(x2,y2)] = p1
         
         #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
         lengthx =x2-x1
@@ -217,8 +218,6 @@ def fit(data,vectors,mean, img,sobelx,sobely,p1):
         [l,t]=vectors.shape
         b=np.zeros(t) 
         counter=0
-        
-        
         var = 50
         #step2 examine the region around each point around Xi to find a new point Xi'
         #gebaseerd op edge detection en distance
@@ -241,7 +240,7 @@ def fit(data,vectors,mean, img,sobelx,sobely,p1):
             s2 =s
             angle2 =angle
             b2 =b
-            genModel = improve(img3,genModel,sobelx,sobely)
+            genModel = improve(genModel,sobelx,sobely)
             #sys.stdout.flush()
             counter = counter +1
             #print counter
@@ -276,11 +275,11 @@ def fit(data,vectors,mean, img,sobelx,sobely,p1):
                 img2=cv2.resize(img2,(1000,500))
                 #cv2.imshow('img_res4',img2)
                 #cv2.waitKey(0) 
-                cv2.imwrite('Results/' + str(1) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
+                cv2.imwrite('Results/' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
                 break
             if(counter == var):
                 counter =0
-        return
+    return
   
 def adaptMean(mean,(x1,y1),(x2,y2)):
     mean = list(mean)
@@ -352,8 +351,8 @@ def improve2(mean,vectorizedEdgeData,array):
 def distance(p1,p2):
     return math.sqrt((p1[0]-p2[0])*(p1[0]-p2[0])+(p1[1]-p2[1])*(p1[1]-p2[1]))
     
-def improve(img,mean,sobelx,sobely):
-    [o,p] =np.shape(img)
+def improve(mean,sobelx,sobely):
+    
     meanD=0
     hi=0
     for m in range(0,80,2):
@@ -361,14 +360,16 @@ def improve(img,mean,sobelx,sobely):
             meanD=meanD+distance((mean[m],mean[m+1]),(mean[n],mean[n+1]))
             hi=hi+1
     meanD=meanD/hi
+
     states = np.zeros((9,80))
     #initialisser met 9 nearestEdgePoints van 1ste punt? (mss sneller?)
     for l in range(0,80,2):
         copyS = np.copy(states)#copy voor for i ? (want nu verlies je 1 van de 9
         for i in range(-1,2):
             for j in range(-1,2):
-                copyS[:,l]=min(o-1,max(0,mean[l]+i))
-                copyS[:,l+1]=min(p-1,max(0,mean[l]+j))                
+                
+                copyS[:,l]=mean[l]+i
+                copyS[:,l+1]=mean[l+1]+j                
                 minv=intenerg(l,copyS[0],meanD)+ extenerg(copyS[0],sobelx,sobely,l )
                 minState=copyS[0,:]
                 for k in range (1,9):
@@ -411,51 +412,43 @@ def nearestEdgePoint(x,y,vectors):
            miny =point[1]
     return (minx,miny)
             
-def PCA(data, nb_components = 0):
-    '''
-    Do a PCA analysis on X
-    @param X:                np.array containing the samples
-                             shape = (nb samples, nb dimensions of each sample)
-    @param nb_components:    the nb components we're interested in
-    @return: return the nb_components largest eigenvalues and eigenvectors of the covariance matrix and return the average sample 
-    '''
-    dataTrans = np.transpose(data)
-    [n,d] = dataTrans.shape
-    if (nb_components <= 0) or (nb_components>n):
-        nb_components = n
-    
-    mean = np.average(dataTrans,axis=0)
-    
-    XminMean = np.zeros((d,n))
-    for i in range(0,n):
-        XminMean[:,i] = dataTrans[i] - mean
-    xtx = np.dot(np.transpose(XminMean),XminMean)
-    
-    values, vectors = np.linalg.eig(xtx)
-    
-    values,vectorList = (list(x) for x in zip(*sorted(zip(values, range(0,n)), key=lambda pair: pair[0], reverse=True)))
-    
-    eigenvalues = values[:nb_components]
-    eigenvectorsTemp = np.zeros((n,nb_components))
-    for i in range(0,nb_components):
-        eigenvectorsTemp[:,i] = vectors[:,vectorList[i]]
-    
-    eigenvectors = np.zeros((d,nb_components))
-    for i in range(0,nb_components):
-        v = np.dot(XminMean,eigenvectorsTemp[:,i])
-        eigenvectors[:,i] = v/np.linalg.norm(v)
-    
-    return [eigenvalues, eigenvectors, mean]
+def PCA(X, num_components=0):
+    X=np.transpose(X)
+    [n,d] = X.shape
+    if (num_components <= 0) or (num_components>n):
+        num_components = n
+    mu = X.mean(axis=0)
+    X = X - mu
+    if n>d:
+        C = np.dot(X.T,X)
+        [eigenvalues,eigenvectors] = np.linalg.eigh(C)
+    else:
+        C = np.dot(X,X.T)
+        [eigenvalues,eigenvectors] = np.linalg.eigh(C)
+        eigenvectors = np.dot(X.T,eigenvectors)
+        for i in xrange(n):
+            eigenvectors[:,i] = eigenvectors[:,i]/np.linalg.norm(eigenvectors[:,i])
+    # or simply perform an economy size decomposition
+    # eigenvectors, eigenvalues, variance = np.linalg.svd(X.T, full_matrices=False)
+    # sort eigenvectors descending by their eigenvalue
+    idx = np.argsort(-eigenvalues)
+    eigenvalues = eigenvalues[idx]
+    eigenvectors = eigenvectors[:,idx]
+    # select only num_components
+    eigenvalues = eigenvalues[0:num_components].copy()
+    eigenvectors = eigenvectors[:,0:num_components].copy()
+    return [eigenvalues, eigenvectors, mu]
     
 if __name__ == '__main__':
     data = getModelData()
     reallignedData = reallign(data)
-    img = visualize.readRadiograph(1)
-    p1 = initialPosition.findPositionFor(1,1)
+    
     #kevin oneven numberOfVectors 1,3,5,..
     #tim even numberOfVectors 2,4,6,...
-    sobelx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
-    sobely = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
+    img = visualize.readRadiograph(1)
+    p2=initialPosition.findPositionFor(1,1)
+    sobelxx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
+    sobelyy = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
     for i in range(2,15,2):
         numbersOfVectors = i
         for j in range(0,20,4):
@@ -466,5 +459,4 @@ if __name__ == '__main__':
                 sys.stdout.flush()
                 [values, vectors, mean] = PCA(reallignedData,numbersOfVectors)
                 testData = getTestData()
-                result = fit(reallignedData, vectors, mean,img,sobelx,sobely,p1)
-    
+                result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2)
