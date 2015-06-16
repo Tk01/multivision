@@ -193,6 +193,20 @@ def findPositionFor(graphNumber, tooth):
     
     return [( b +(tooth-1)*(d-b)/4,a),(b +(tooth)*(d-b)/4,c)]
 
+def findPositionForAll():
+    allPositions = np.zeros((14,4,2,2))
+    size1 = 500
+    size2 = 400
+    for i in range(1,15):
+        data = makeData(size1,size2)
+        [eigenvalues, eigenvectors, mean] = pca(data,5)
+        img = visualize.readRadiograph(i)
+        [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2)
+        for j in range(1,5):
+            allPositions[i-1,j-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]
+    
+    return allPositions
+    
 if __name__ == '__main__':
     size1 = 500
     size2 = 400
