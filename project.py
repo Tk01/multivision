@@ -17,10 +17,10 @@ iWeight1 = 1
 iWeight2 = 1
 
 
-def getModelData():
+def getModelData(tooth):
     result= np.zeros((80,14))
     for i in range(14):
-        f = open('Landmarks\original\landmarks'+str(i+1)+'-1.txt', 'r')
+        f = open('Landmarks\original\landmarks'+str(i+1)+'-'+str(tooth)+'.txt', 'r')
         t=0
         for j in f:
             result[t,i]=int(float(j.rstrip()))
@@ -195,10 +195,15 @@ def getTestData():
     return
     
     
-def fit(data,vectors,mean,sobelx,sobely,p1):
+def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
     #per image
     for graphNumber in range(1,15,1):
+        sobelx = sobelxList[graphNumber-1]
+        sobely = sobelyList[graphNumber-1]
         for tnum in range(1,5):
+            data = dataList[tnum-1]
+            vectors = vectorsList[tnum-1]
+            mean = meanList[tnum-1]
             img = visualize.readRadiograph(graphNumber)
             img3 = img.copy()#cv2.equalizeHist(img)
             #step1 ask estimate
@@ -440,10 +445,12 @@ def PCA(X, num_components=0):
     return [eigenvalues, eigenvectors, mu]
     
 if __name__ == '__main__':
-    data = getModelData()
-    reallignedData = reallign(data)
-    list =[(4,0,1.2),
-        (4,0.4,0),
+    reallignedData = [0]*4
+    for i in range(1,5):
+        data = getModelData(i)
+        reallignedData[i-1] = reallign(data)
+    list1 =[(4,0.0,1.2),
+        (4,0.4,0.0),
         (4,0.8,0.8),
         (4,0.8,1.2),
         (4,1.2,0.4),
@@ -465,16 +472,23 @@ if __name__ == '__main__':
         (8,1.6,1.2)]
     #kevin oneven numberOfVectors 1,3,5,..
     #tim even numberOfVectors 2,4,6,...
-    img = visualize.readRadiograph(1)
     p2=initialPosition.findPositionForAll()
-    sobelxx = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
-    sobelyy = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
-    for (i,j,k) in list:
+    sobelxx = [0]*14
+    sobelyy = [0]*14
+    for graphNumber in range(1,15):
+        img = visualize.readRadiograph(graphNumber)
+        sobelxx[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
+        sobelyy[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
+    for (i,j,k) in list1:
         numbersOfVectors = i
         iWeight1 = j
         iWeight2 = k
         print str(numbersOfVectors)+',' + str(iWeight1)+',' + str(iWeight2)
         sys.stdout.flush()
-        [values, vectors, mean] = PCA(reallignedData,numbersOfVectors)
+        values = [0] * 4
+        vectors = [0] * 4
+        mean = [0] * 4
+        for a in range(1,4):
+            [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
         testData = getTestData()
         result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2)
