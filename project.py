@@ -272,19 +272,23 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
             #repeat from 2 until convergence
                 #if max(abs(genModel2-genModel)) <0.01 and abs(Xt2-Xt) <0.01 and abs(Yt2-Yt) <0.01 and abs(s2-s) <0.01 and abs(angle2-angle) <0.01 and max(abs(b2-b)) <0.01:
                 diff=0
+                print counter
+                print tnum
+                print genModelvar - genModel
                 for i in range(0,80,2):
                     if not (genModel2[i] == genModel[i] and genModel2[i+1] == genModel[i+1]):
                             diff =diff+1
                 if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
+                    break
                 if(counter == var):
                     counter =0
         img2=cv2.resize(img3,(1000,500))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
         cv2.imwrite('Results/full,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
-        break
+        
     return
   
 def adaptMean(mean,(x1,y1),(x2,y2)):
@@ -449,14 +453,14 @@ if __name__ == '__main__':
     for i in range(1,5):
         data = getModelData(i)
         reallignedData[i-1] = reallign(data)
-    list1 =[(4,0.0,1.2),
-        (4,0.4,0.0),
-        (4,0.8,0.8),
-        (4,0.8,1.2),
-        (4,1.2,0.4),
-        (4,1.2,0.8),
-        (6,0.0,0.8),
-        (6,0.0,1.6),
+    list1 =[#(4,0.0,1.2),
+        #(4,0.4,0.0),
+        #(4,0.8,0.8),
+        #(4,0.8,1.2),
+        #(4,1.2,0.4),
+        #(4,1.2,0.8),
+        #(6,0.0,0.8),
+        #(6,0.0,1.6),
         (6,0.4,0.4),
         (6,0.4,1.2),
         (6,0.8,0.4),
@@ -488,7 +492,7 @@ if __name__ == '__main__':
         values = [0] * 4
         vectors = [0] * 4
         mean = [0] * 4
-        for a in range(1,4):
+        for a in range(1,5):
             [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
         testData = getTestData()
         result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2)
