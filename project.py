@@ -197,20 +197,20 @@ def getTestData():
     
 def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
     #per image
-    for graphNumber in range(1,15,1):
+    for graphNumber in range(1,15,15):
         sobelx = sobelxList[graphNumber-1]
         sobely = sobelyList[graphNumber-1]
-        for tnum in range(1,5):
+        img = visualize.readRadiograph(graphNumber)
+        img3 = img.copy()
+        for tnum in range(1,5,5):
             data = dataList[tnum-1]
             vectors = vectorsList[tnum-1]
             mean = meanList[tnum-1]
-            img = visualize.readRadiograph(graphNumber)
-            img3 = img.copy()#cv2.equalizeHist(img)
+            #cv2.equalizeHist(img)
             #step1 ask estimate
             
             #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
             [(x1,y1),(x2,y2)] = p1[graphNumber-1][tnum-1]
-            
             #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
             lengthx =x2-x1
             lengthy =y2-y1
@@ -272,22 +272,26 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
             #repeat from 2 until convergence
                 #if max(abs(genModel2-genModel)) <0.01 and abs(Xt2-Xt) <0.01 and abs(Yt2-Yt) <0.01 and abs(s2-s) <0.01 and abs(angle2-angle) <0.01 and max(abs(b2-b)) <0.01:
                 diff=0
-                print counter
-                print tnum
-                print genModelvar - genModel
                 for i in range(0,80,2):
                     if not (genModel2[i] == genModel[i] and genModel2[i+1] == genModel[i+1]):
                             diff =diff+1
                 if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
+                    print 'succeeded'
+                    break
+                #print str(x1-lengthx)+','+str(min(genModel[::2]))+','+str(max(genModel[::2]))+','+str(x2+lengthx)
+                #print str(y1-lengthy)+','+str(min(genModel[1::2]))+','+str(max(genModel[1::2]))+','+str(y2+lengthy)
+                if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
+                    visualize.addLandmarks(img3, genModel,False)
+                    print 'exceeded'
                     break
                 if(counter == var):
                     counter =0
         img2=cv2.resize(img3,(1000,500))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
-        cv2.imwrite('Results/full,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
+        cv2.imwrite('Results/' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
         
     return
   
@@ -406,7 +410,7 @@ def intenerg(l,copyS,meanD):
 def extenerg(copyS,sobelx,sobely,l ):
     res=0
     for i in range(2,l,2):
-        res=res-np.linalg.norm([sobelx[copyS[l]][copyS[l+1]],sobely[copyS[l]][copyS[l+1]]])*math.cos(np.arctan(sobely[copyS[l]][copyS[l+1]]/sobelx[copyS[l]][copyS[l+1]]) - (np.arctan((copyS[l+1]-copyS[l-1])/(copyS[l]-copyS[l-2]))+math.pi/2))
+        res=res-np.linalg.norm([sobelx[copyS[l+1]][copyS[l]],sobely[copyS[l+1]][copyS[l]]])*math.cos(np.arctan(sobely[copyS[l+1]][copyS[l]]/sobelx[copyS[l+1]][copyS[l]]) - (np.arctan((copyS[l]-copyS[l-2])/(copyS[l+1]-copyS[l-1]))-math.pi/2))
     return res
   
 
@@ -453,27 +457,27 @@ if __name__ == '__main__':
     for i in range(1,5):
         data = getModelData(i)
         reallignedData[i-1] = reallign(data)
-    list1 =[#(4,0.0,1.2),
-        #(4,0.4,0.0),
-        #(4,0.8,0.8),
-        #(4,0.8,1.2),
-        #(4,1.2,0.4),
-        #(4,1.2,0.8),
-        #(6,0.0,0.8),
-        #(6,0.0,1.6),
-        (6,0.4,0.4),
-        (6,0.4,1.2),
-        (6,0.8,0.4),
-        (6,0.8,1.6),
-        (6,1.2,0.0),
-        (8,0.0,0.4),
-        (8,0.0,1.2),
-        (8,0.4,0.4),
-        (8,0.4,0.8),
-        (8,0.8,0.4),
-        (8,0.8,0.8),
-        (8,1.6,0.8),
-        (8,1.6,1.2)]
+    #list1 =[#(4,0.0,1.2),
+    #    #(4,0.4,0.0),
+    #    #(4,0.8,0.8),
+    #    #(4,0.8,1.2),
+    #    #(4,1.2,0.4),
+    #    #(4,1.2,0.8),
+    #    #(6,0.0,0.8),
+    #    #(6,0.0,1.6),
+    #    (6,0.4,0.4),
+    #    (6,0.4,1.2),
+    #    (6,0.8,0.4),
+    #    (6,0.8,1.6),
+    #    (6,1.2,0.0),
+    #    (8,0.0,0.4),
+    #    (8,0.0,1.2),
+    #    (8,0.4,0.4),
+    #    (8,0.4,0.8),
+    #    (8,0.8,0.4),
+    #    (8,0.8,0.8),
+    #    (8,1.6,0.8),
+    #    (8,1.6,1.2)]
     #kevin oneven numberOfVectors 1,3,5,..
     #tim even numberOfVectors 2,4,6,...
     p2=initialPosition.findPositionForAll()
@@ -483,16 +487,22 @@ if __name__ == '__main__':
         img = visualize.readRadiograph(graphNumber)
         sobelxx[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
         sobelyy[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
-    for (i,j,k) in list1:
+    #for (i,j,k) in list1:
+    #    numbersOfVectors = i
+    #    iWeight1 = j
+    #    iWeight2 = k
+    for i in range(1,15,2):
         numbersOfVectors = i
-        iWeight1 = j
-        iWeight2 = k
-        print str(numbersOfVectors)+',' + str(iWeight1)+',' + str(iWeight2)
-        sys.stdout.flush()
-        values = [0] * 4
-        vectors = [0] * 4
-        mean = [0] * 4
-        for a in range(1,5):
-            [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
-        testData = getTestData()
-        result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2)
+        for j in range(0,20,4):
+            iWeight1 = j/10.0
+            for k in range(0,20,4):
+                iWeight2 = k/10.0
+                print str(numbersOfVectors)+',' + str(iWeight1)+',' + str(iWeight2)
+                sys.stdout.flush()
+                values = [0] * 4
+                vectors = [0] * 4
+                mean = [0] * 4
+                for a in range(1,5):
+                    [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
+                testData = getTestData()
+                result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2)
