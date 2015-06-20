@@ -18,6 +18,80 @@ iWeight2 = 1
 lengthtraining = 10
 lengthtest = 20
 
+def lineData(tooth):
+    data = getModelData(tooth)
+
+    valuesLists = np.zeros((40,14,2*lengthtraining+1))
+    
+    for graphNumber in range(1,15):
+        img = visualize.readRadiograph(graphNumber)
+        toothData = data[:,graphNumber-1]
+        
+        
+        normals = getNormals(toothData)
+        for i in range(0,80,2):
+            lines = getLines((toothData[i],toothData[i+1]), (normals[i],normals[i+1]))
+            valuesLists[i/2][graphNumber-1] = getValuesAtLine(img,lines)
+            
+    
+    means = np.zeros((40,2*lengthtraining+1))
+    covs = np.zeros((40,2*lengthtraining+1,2*lengthtraining+1))
+    for i in range(0,40):
+        means[i] = np.average(valuesLists[i], axis = 0)
+        covs[i] = np.linalg.pinv(np.cov(valuesLists[i], rowvar = 0))
+    #invert covariance
+    return (means,covs)
+    
+def getLines((x,y),(nx,ny)):
+    l1 = line(x,y,round(x + lengthtraining*nx),round(y + lengthtraining*ny))
+    l2 = line(x,y,round(x - lengthtraining*nx),round(y - lengthtraining*ny))
+    
+    return (l1,l2)
+    
+def getValuesAtLine(img, lines):
+    values = np.zeros(2 * lengthtraining + 1)
+    
+    (l1,l2) = lines
+    
+    for i in range(lengthtraining,-1,-1):
+        values[lengthtraining-i] = img[l1[i][0],l1[i][1]]
+    
+    
+    for i in range(1,lengthtraining+1):
+        values[lengthtraining+i] = img[l2[i][0],l2[i][1]]
+        
+    return values
+        
+"http://rosettacode.org/wiki/Bitmap/Bresenham's_line_algorithm#Python"
+def line(x0, y0, x1, y1):
+    "Bresenham's line algorithm"
+    array = []
+    dx = abs(x1 - x0)
+    dy = abs(y1 - y0)
+    x, y = x0, y0
+    sx = -1 if x0 > x1 else 1
+    sy = -1 if y0 > y1 else 1
+    if dx > dy:
+        err = dx / 2.0
+        while x != x1:
+            array.append((x,y))
+            err -= dy
+            if err < 0:
+                y += sy
+                err += dx
+            x += sx
+    else:
+        err = dy / 2.0
+        while y != y1:
+            array.append((x,y))
+            err -= dx
+            if err < 0:
+                x += sx
+                err += dy
+            y += sy   
+    array.append((x,y))
+    return array
+
 def getModelData(tooth):
     result= np.zeros((80,14))
     for i in range(14):
@@ -107,6 +181,7 @@ def reallign(data):
             break 
     #visualize.showReallignedData(data)
     return data
+    
 def generateModel2(P,mean,Y):
     [Xt,Yt,s,angle] =allign(mean,Y)
     y=np.zeros(80)
@@ -196,7 +271,7 @@ def getTestData():
     return
     
     
-def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
+def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
     #per image
     for graphNumber in range(1,15,15):
         sobelx = sobelxList[graphNumber-1]
@@ -207,6 +282,8 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
             data = dataList[tnum-1]
             vectors = vectorsList[tnum-1]
             mean = meanList[tnum-1]
+            meanV = teethData[tnum][0]
+            matrix = teethData[tnum][1]
             #cv2.equalizeHist(img)
             #step1 ask estimate
             
@@ -248,7 +325,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
                 s2 =s
                 angle2 =angle
                 b2 =b
-                genModel = improve(genModel,sobelx,sobely)
+                genModel = improve3(genModel,meanV,matrix,img)
                 #sys.stdout.flush()
                 counter = counter +1
                 #print counter
@@ -376,11 +453,13 @@ def value(image,mean,matrix,j,li1,li2):
 def getNormals(estimate):
     res = np.zeros(80);
     for i in range(0,80,2):
-        dx= estimate[i+2 % 80]-estimate[i-2 % 80]
-        dy= estimate[i+3 % 80]-estimate[i-1 % 80]
-        res[i] =-dy/min(abs(dy),abs(dx))
-        res[i+1] = dx/min(abs(dy),abs(dx))
-    return
+        dx= estimate[(i+2) % 80]-estimate[(i-2) % 80]
+        dy= estimate[(i+3) % 80]-estimate[(i-1) % 80]
+        res[i] =-dy/max(abs(dy),abs(dx))
+        res[i+1] = dx/max(abs(dy),abs(dx))
+    return res
+    
+    
 def improve2(mean,vectorizedEdgeData,array):
     res = np.zeros(80);
     Nedges = np.zeros(80);
@@ -518,6 +597,10 @@ if __name__ == '__main__':
     #    (8,1.6,1.2)]
     #kevin oneven numberOfVectors 1,3,5,..
     #tim even numberOfVectors 2,4,6,...
+    teethdata =[0]*8
+    for tnum in range(1,9):
+        teethdata[tnum-1]=lineData(tnum)
+        
     p2=initialPosition.findPositionForAll()
     sobelxx = [0]*14
     sobelyy = [0]*14
@@ -543,4 +626,4 @@ if __name__ == '__main__':
                 for a in range(1,5):
                     [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
                 testData = getTestData()
-                result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2)
+                result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2,teethdata)
