@@ -15,8 +15,8 @@ import initialPosition
 numbersOfVectors = 6
 iWeight1 = 1
 iWeight2 = 1
-lengthtraining = 10
-lengthtest = 20
+lengthtraining = 5
+lengthtest = 10
 
 def lineData(tooth):
     data = getModelData(tooth)
@@ -54,13 +54,15 @@ def getValuesAtLine(img, lines):
     (l1,l2) = lines
     
     for i in range(lengthtraining,-1,-1):
-        values[lengthtraining-i] = img[l1[i][0],l1[i][1]]
+        values[lengthtraining-i] = img[l1[i][1],l1[i][0]]
     
     
     for i in range(1,lengthtraining+1):
-        values[lengthtraining+i] = img[l2[i][0],l2[i][1]]
-        
-    return values
+        values[lengthtraining+i] = img[l2[i][1],l2[i][0]]
+    if( np.count_nonzero(np.absolute(np.gradient(values))) == 0):
+        return np.gradient(values)
+    else: 
+        return np.gradient(values)/np.sum(np.absolute(np.gradient(values)))
         
 "http://rosettacode.org/wiki/Bitmap/Bresenham's_line_algorithm#Python"
 def line(x0, y0, x1, y1):
@@ -273,12 +275,12 @@ def getTestData():
     
 def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
     #per image
-    for graphNumber in range(1,15,15):
+    for graphNumber in range(1,15):
         sobelx = sobelxList[graphNumber-1]
         sobely = sobelyList[graphNumber-1]
         img = visualize.readRadiograph(graphNumber)
         img3 = img.copy()
-        for tnum in range(1,5,5):
+        for tnum in range(1,5):
             data = dataList[tnum-1]
             vectors = vectorsList[tnum-1]
             mean = meanList[tnum-1]
@@ -353,7 +355,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
                 for i in range(0,80,2):
                     if not (genModel2[i] == genModel[i] and genModel2[i+1] == genModel[i+1]):
                             diff =diff+1
-                if diff <5: #or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
+                if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
                     print 'succeeded'
@@ -369,7 +371,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
         img2=cv2.resize(img3,(1000,500))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
-        cv2.imwrite('Results/' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
+        cv2.imwrite('Results/LastAttempt,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
         
     return
   
@@ -426,14 +428,14 @@ def improve3(estimate,mean,matrix,image):
     for i in range(0,80,2):
        li1= line(estimate[i],estimate[i+1],estimate[i]+lengthtest*normals[i],estimate[i+1]+lengthtest*normals[i+1])
        li2= line(estimate[i],estimate[i+1],estimate[i]-lengthtest*normals[i],estimate[i+1]-lengthtest*normals[i+1])
-       bestV = value(image,mean[i],matrix[i],0,li1,li2,k)
+       bestV = value(image,mean[i/2],matrix[i/2],0,li1,li2)
        bestP = li1[0]
        for j in range(1,lengthtest-lengthtraining+1):
-            if bestV>value(image,mean[i],matrix[i],j,li1,li2):
-                bestV= value(image,mean[i],matrix[i],j,li1,li2)
+            if bestV>value(image,mean[i/2],matrix[i/2],j,li1,li2):
+                bestV= value(image,mean[i/2],matrix[i/2],j,li1,li2)
                 bestP = li1[j]
-            if bestV>value(image,mean[i],matrix[i],-j,li1,li2):
-                bestV= value(image,mean[i],matrix[i],-j,li1,li2)
+            if bestV>value(image,mean[i/2],matrix[i/2],-j,li1,li2):
+                bestV= value(image,mean[i/2],matrix[i/2],-j,li1,li2)
                 bestP = li2[j]
        res[i]=bestP[0]
        res[i+1]=bestP[1]          
@@ -443,12 +445,14 @@ def value(image,mean,matrix,j,li1,li2):
     line = np.zeros(2*lengthtraining+1);
     for i in range(-lengthtraining,lengthtraining+1):
         if j+i<0:
-            line[i+lengthtraining] = image[li2[abs(j+i)][0],li2[abs(j+i)][1]]  
+            line[i+lengthtraining] = image[li2[abs(j+i)][1],li2[abs(j+i)][0]]  
         else:
-            line[i+lengthtraining] = image[li1[j+i][0],li1[j+i][1]]
-    lineG = np.gradient(line)
-    lineG = lineG/np.sum(lineG)
-    return np.dot(np.dot((lineG-mean),matrix),(lineG-mean))   
+            line[i+lengthtraining] = image[li1[j+i][1],li1[j+i][0]]
+    if( np.count_nonzero(np.absolute(np.gradient(line))) == 0):
+        LineG= np.gradient(line)
+    else: 
+        LineG= np.gradient(line)/np.sum(np.absolute(np.gradient(line)))
+    return np.dot(np.dot(np.transpose(LineG-mean), matrix),LineG-mean)
         
 def getNormals(estimate):
     res = np.zeros(80);
@@ -604,26 +608,26 @@ if __name__ == '__main__':
     p2=initialPosition.findPositionForAll()
     sobelxx = [0]*14
     sobelyy = [0]*14
-    for graphNumber in range(1,15):
-        img = visualize.readRadiograph(graphNumber)
-        sobelxx[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
-        sobelyy[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
+    #for graphNumber in range(1,15):
+       # img = visualize.readRadiograph(graphNumber)
+       # sobelxx[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
+       # sobelyy[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
     #for (i,j,k) in list1:
     #    numbersOfVectors = i
     #    iWeight1 = j
     #    iWeight2 = k
-    for i in range(1,15,2):
+    for i in [5,7,9,3,1,11,13]: #[4,6,8,2,10,12,14]:
         numbersOfVectors = i
-        for j in range(0,20,4):
-            iWeight1 = j/10.0
-            for k in range(0,20,4):
-                iWeight2 = k/10.0
-                print str(numbersOfVectors)+',' + str(iWeight1)+',' + str(iWeight2)
-                sys.stdout.flush()
-                values = [0] * 4
-                vectors = [0] * 4
-                mean = [0] * 4
-                for a in range(1,5):
-                    [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
-                testData = getTestData()
-                result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2,teethdata)
+        #for j in range(0,20,4):
+        #    iWeight1 = j/10.0
+        #    for k in range(0,20,4):
+        #        iWeight2 = k/10.0
+        print str(numbersOfVectors)#+',' + str(iWeight1)+',' + str(iWeight2)
+        sys.stdout.flush()
+        values = [0] * 4
+        vectors = [0] * 4
+        mean = [0] * 4
+        for a in range(1,5):
+            [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
+        testData = getTestData()
+        result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2,teethdata)
