@@ -15,7 +15,8 @@ import initialPosition
 numbersOfVectors = 6
 iWeight1 = 1
 iWeight2 = 1
-
+lengthtraining = 10
+lengthtest = 20
 
 def getModelData(tooth):
     result= np.zeros((80,14))
@@ -275,7 +276,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
                 for i in range(0,80,2):
                     if not (genModel2[i] == genModel[i] and genModel2[i+1] == genModel[i+1]):
                             diff =diff+1
-                if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
+                if diff <5: #or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
                     print 'succeeded'
@@ -342,7 +343,44 @@ def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
             if y>=0 and y< M and x>=0 and x< N and edges[y,x] != 0:
                 array.append((y,x))
     return [array,scipy.spatial.KDTree(array)]
-    
+def improve3(estimate,mean,matrix,image):
+    res = np.zeros(80);
+    normals = getNormals(estimate)
+    for i in range(0,80,2):
+       li1= line(estimate[i],estimate[i+1],estimate[i]+lengthtest*normals[i],estimate[i+1]+lengthtest*normals[i+1])
+       li2= line(estimate[i],estimate[i+1],estimate[i]-lengthtest*normals[i],estimate[i+1]-lengthtest*normals[i+1])
+       bestV = value(image,mean[i],matrix[i],0,li1,li2,k)
+       bestP = li1[0]
+       for j in range(1,lengthtest-lengthtraining+1):
+            if bestV>value(image,mean[i],matrix[i],j,li1,li2):
+                bestV= value(image,mean[i],matrix[i],j,li1,li2)
+                bestP = li1[j]
+            if bestV>value(image,mean[i],matrix[i],-j,li1,li2):
+                bestV= value(image,mean[i],matrix[i],-j,li1,li2)
+                bestP = li2[j]
+       res[i]=bestP[0]
+       res[i+1]=bestP[1]          
+    return res
+
+def value(image,mean,matrix,j,li1,li2):
+    line = np.zeros(2*lengthtraining+1);
+    for i in range(-lengthtraining,lengthtraining+1):
+        if j+i<0:
+            line[i+lengthtraining] = image[li2[abs(j+i)][0],li2[abs(j+i)][1]]  
+        else:
+            line[i+lengthtraining] = image[li1[j+i][0],li1[j+i][1]]
+    lineG = np.gradient(line)
+    lineG = lineG/np.sum(lineG)
+    return np.dot(np.dot((lineG-mean),matrix),(lineG-mean))   
+        
+def getNormals(estimate):
+    res = np.zeros(80);
+    for i in range(0,80,2):
+        dx= estimate[i+2 % 80]-estimate[i-2 % 80]
+        dy= estimate[i+3 % 80]-estimate[i-1 % 80]
+        res[i] =-dy/min(abs(dy),abs(dx))
+        res[i+1] = dx/min(abs(dy),abs(dx))
+    return
 def improve2(mean,vectorizedEdgeData,array):
     res = np.zeros(80);
     Nedges = np.zeros(80);
