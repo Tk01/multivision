@@ -9,6 +9,7 @@ import sys
 import scipy.spatial
 import scipy.signal
 import initialPosition
+import random
 #
 # Landmarks zijn (x1,y1,x2,y2,...) geordend, zie visualize (heb normaal deze fout verbeterd)
 #
@@ -77,6 +78,8 @@ def line(x0, y0, x1, y1):
         err = dx / 2.0
         while x != x1:
             array.append((x,y))
+            if np.shape(array)[0] >10000:
+                print 'large'
             err -= dy
             if err < 0:
                 y += sy
@@ -86,6 +89,8 @@ def line(x0, y0, x1, y1):
         err = dy / 2.0
         while y != y1:
             array.append((x,y))
+            if np.shape(array)[0] >10000:
+                print 'large'
             err -= dx
             if err < 0:
                 x += sx
@@ -276,12 +281,12 @@ def getTestData():
 def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
     #per image
     for graphNumber in range(1,15):
-        sobelx = sobelxList[graphNumber-1]
-        sobely = sobelyList[graphNumber-1]
+        #sobelx = sobelxList[graphNumber-1]
+        #sobely = sobelyList[graphNumber-1]
         img = visualize.readRadiograph(graphNumber)
         img3 = img.copy()
         for tnum in range(1,5):
-            data = dataList[tnum-1]
+            #data = dataList[tnum-1]
             vectors = vectorsList[tnum-1]
             mean = meanList[tnum-1]
             meanV = teethData[tnum][0]
@@ -308,7 +313,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
             #step2 examine the region around each point around Xi to find a new point Xi'
             #gebaseerd op edge detection en distance
             while True:
-                
+
                 #counter = counter +1
                 #if counter == 100:
                 #    img2 = img.copy()
@@ -322,11 +327,11 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
                     for i in range(0,80):
                         genModelvar[i]=int(round(genModelvar[i]))
                 genModel2 = list(genModel)
-                Xt2 =Xt
-                Yt2 =Yt
-                s2 =s
-                angle2 =angle
-                b2 =b
+                #Xt2 =Xt
+                #Yt2 =Yt
+                #s2 =s
+                #angle2 =angle
+                #b2 =b
                 genModel = improve3(genModel,meanV,matrix,img)
                 #sys.stdout.flush()
                 counter = counter +1
@@ -448,6 +453,7 @@ def value(image,mean,matrix,j,li1,li2):
             line[i+lengthtraining] = image[li2[abs(j+i)][1],li2[abs(j+i)][0]]  
         else:
             line[i+lengthtraining] = image[li1[j+i][1],li1[j+i][0]]
+    LineG =0
     if( np.count_nonzero(np.absolute(np.gradient(line))) == 0):
         LineG= np.gradient(line)
     else: 
@@ -461,6 +467,9 @@ def getNormals(estimate):
         dy= estimate[(i+3) % 80]-estimate[(i-1) % 80]
         res[i] =-dy/max(abs(dy),abs(dx))
         res[i+1] = dx/max(abs(dy),abs(dx))
+        if dy ==0 and dx ==0:
+            res[i] =int(float(random.uniform(100, 200)))
+            res[i+1] = int(float(random.uniform(100, 200)))
     return res
     
     
@@ -616,7 +625,7 @@ if __name__ == '__main__':
     #    numbersOfVectors = i
     #    iWeight1 = j
     #    iWeight2 = k
-    for i in [5,7,9,3,1,11,13]: #[4,6,8,2,10,12,14]:
+    for i in [4,6,8,2,10,12,14]:
         numbersOfVectors = i
         #for j in range(0,20,4):
         #    iWeight1 = j/10.0
