@@ -53,7 +53,22 @@ def makeData(resize1 = 500, resize2 = 500, Upper=1):
     
     smallImages = np.zeros((14,resize1 * resize2))
     if Upper ==0 :
-        listTopFourTeeth =[]
+        listTopFourTeeth =[
+        [(1339,1004),(1698,1261)],
+        [(1346,1002),(1658,1223)],
+        [(1357,1029),(1639,1245)],
+        [(1383,1041),(1649,1290)],
+        [(1361,991),(1669,1229)],
+        [(1387,961),(1688,1210)],
+        [(1368,1013),(1645,1251)],
+        [(1357,887),(1610,1121)],
+        [(1402,1065),(1633,1296)],
+        [(1348,907),(1621,1175)],
+        [(1316,1011),(1651,1290)],
+        [(1394,985),(1658,1192)],
+        [(1372,913),(1636,1195)],
+        [(1344,1019),(1648,1325)]
+        ]
     if Upper ==1 :
         listTopFourTeeth = [
         [(1298,752),(1730,1017)],
@@ -90,8 +105,8 @@ def makeData(resize1 = 500, resize2 = 500, Upper=1):
     #    #cv2.imshow('img' + str(i) ,np.uint8(results[i,:,:]))
     #    #cv2.waitKey(0)
     #reAll = cv2.resize(allImages,(1500,750), interpolation=cv2.INTER_NEAREST)
-    ##cv2.imshow('all initialization images' ,np.uint8(reAll))
-    ##cv2.waitKey(0)
+    #cv2.imshow('all initialization images' ,np.uint8(reAll))
+    #cv2.waitKey(0)
     
     return smallImages   
        
@@ -185,21 +200,23 @@ def findPositionFor(graphNumber, tooth):
     
     return [( b +(tooth-1)*(d-b)/4,a),(b +(tooth)*(d-b)/4,c)]
 
-def findPositionForAll():
+def findPositionForAll(counter,oneorzero):
     allPositions = np.zeros((14,8,2,2))
     size1 = 500
     size2 = 400
-    for i in range(1,15):
-        data = makeData(size1,size2,1)
-        [eigenvalues, eigenvectors, mean] = pca(data,5)
-        img = visualize.readRadiograph(i)
+    data = makeData(size1,size2,1)
+    [eigenvalues, eigenvectors, mean] = pca(data,5)
+    for i in range(1,15-oneorzero):
+        img = visualize.readRadiograph((i+counter)%14+1)
         [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2,1)
         for j in range(1,5):
             allPositions[i-1,j-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]
-    for i in range(1,15):
-        data = makeData(size1,size2,0)
-        [eigenvalues, eigenvectors, mean] = pca(data,5)
-        img = visualize.readRadiograph(i)
+    size1 = 300
+    size2 = 250
+    data = makeData(size1,size2,0)
+    [eigenvalues, eigenvectors, mean] = pca(data,5)
+    for i in range(1,15-oneorzero):
+        img = visualize.readRadiograph((i+counter)%14+1)
         [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2,0)
         for j in range(1,5):
             allPositions[i-1,j+4-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]

@@ -28,14 +28,31 @@ To be able to combine all the different landmarks of each incisor they need to b
 When testing the different algorithms, we encountered a problem with the fitting of our contours: it didn't convergence completely. To solve this we first were a bit lenient about when convergence happened: if less than 10\% of the points describing the contour changed, we considered this converged. This approach gave us some better results, but it didn't solve the problem completely. We thought that the contours endlessly cycled between certain states. We solved this by introducing an extra condition: if each point of the contour changed at most 10 pixels in every 50 iterations, we considered this converged. This new condition guaranteed termination of the algorithm. 
 
 A second observation we made was that the contour would move outside the bounds of a reasonable solution. When this occurs, we would stop the execution of the fitting and consider the current result as best fit. We consider the bounds of a reasonable solution as a rectangle with trice the width and 140\% the height of the initial rectangle found as initial position, see section \ref{sec:initial}.
-\section{Initializing starting position}\label{sec:initial}
 
+%figure
+
+\section{Initializing starting position}\label{sec:initial}
+Before we can try to fit our model to the image, we need to find an initial estimate of the incisors. We decided to use PCA to find the estimate.
+To make sure teeth aren't confused with each other we decided to group the upper and lower incisors in two different groups and search for each group independently. This means that we extract two cropped images, respectively of the four upper and lower incisors. In figures \ref{fig:PCAupper} and \ref{fig:PCAlower} we show the results of both PCA procedures.
+
+To limit the amount of comparisons to be done and attain reasonable solutions, we can limit the search space to the central area of each image, since the incisors only reside there. The areas for both upper and lower incisors are displayed in figure \ref{fig:PCAsearch}.
+
+To extract an estimate for each tooth, we simply divide the found result in four equally long parts, figure \ref{fig:split4}. Even though it is not precise, we decided that it would be good enough as an initial estimate.
 
 \section{Contour fitting}\label{sec:fit}
+After finding the initial estimate of an incisor, we then have to fit the estimate to image. We tried four different approaches to this particular problem. The first one is based on using the nearest edges, second and third one are based on an energy function and the fourth one is based on derivative. Although they are slightly different, they still all follow the same algorithm: the active shape model algorithm described in protocol 2 from \cite{TemplateAlgorithm}.
+
+\subsection{Nearest edge based}\label{sec:fit_edge}
+
+
 \subsection{Energy based}\label{sec:fit_energy}
-\subsubsection{Nearest edge based}
+
 \subsubsection{Gradient size based}
+
+
 \subsubsection{Orientated gradient size based}
+
+
 
 \subsection{Derivative based}\label{sec:fit_deriv}
 

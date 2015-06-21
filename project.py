@@ -25,10 +25,9 @@ def lineData(tooth):
 
     valuesLists = np.zeros((40,14,2*lengthtraining+1))
     
-    for graphNumber in range(1,15-LeaveOneoutTest):
-        img = visualize.readRadiograph((graphNumber+counter)%14)
-        toothData = data[:,graphNumber-1]
-        
+    for graphNumber in range(0,14-LeaveOneoutTest):
+        img = visualize.readRadiograph((graphNumber+counter)%14+1)
+        toothData = data[:,graphNumber-1]        
         
         normals = getNormals(toothData)
         for i in range(0,80,2):
@@ -287,12 +286,13 @@ def getTestData():
     
     
 def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
+    global counter
     #per image
     for graphNumber in range(14,15):
         res=0
         #sobelx = sobelxList[graphNumber-1]
         #sobely = sobelyList[graphNumber-1]
-        img = visualize.readRadiograph((graphNumber+counter) % 14)
+        img = visualize.readRadiograph((graphNumber+counter) % 14 +1)
         img3 = img.copy()
         for tnum in range(1,9):
             #data = dataList[tnum-1]
@@ -304,7 +304,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
             #step1 ask estimate
             
             #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
-            [(x1,y1),(x2,y2)] = p1[graphNumber-1][tnum-1]
+            [(x1,y1),(x2,y2)] = p1[(graphNumber+counter) % 14 ][tnum-1]
             #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
             lengthx =x2-x1
             lengthy =y2-y1
@@ -372,14 +372,14 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
                 if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
-                    res = res+np.linalg.norm(genModel,getLandmarks(tnum))
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'succeeded'
                     break
                 #print str(x1-lengthx)+','+str(min(genModel[::2]))+','+str(max(genModel[::2]))+','+str(x2+lengthx)
                 #print str(y1-lengthy)+','+str(min(genModel[1::2]))+','+str(max(genModel[1::2]))+','+str(y2+lengthy)
                 if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
                     visualize.addLandmarks(img3, genModel,False)
-                    res = res+np.linalg.norm(genModel,getLandmarks(tnum))
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'exceeded'
                     break
                 if(counter == var):
@@ -625,7 +625,7 @@ if __name__ == '__main__':
     for tnum in range(1,9):
         teethdata[tnum-1]=lineData(tnum)
         
-    p2=initialPosition.findPositionForAll()
+    p2=initialPosition.findPositionForAll(counter,LeaveOneoutTest)
     sobelxx = [0]*14
     sobelyy = [0]*14
     #for graphNumber in range(1,15):
