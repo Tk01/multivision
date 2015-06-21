@@ -99,11 +99,11 @@ def line(x0, y0, x1, y1):
     array.append((x,y))
     return array
 def getLandmarks(tooth):
-    result= np.zeros((80,14-LeaveOneoutTest))
+    result= np.zeros((80))
     f = open('Landmarks\original\landmarks'+str((14+counter) % 14+1)+'-'+str(tooth)+'.txt', 'r')
     t=0
     for j in f:
-        result[t,i]=int(float(j.rstrip()))
+        result[t]=int(float(j.rstrip()))
         t = t+1
     return result
 def getModelData(tooth):
