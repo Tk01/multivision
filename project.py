@@ -18,13 +18,15 @@ iWeight1 = 1
 iWeight2 = 1
 lengthtraining = 5
 lengthtest = 10
+LeaveOneoutTest =1
+counter = 1
 def lineData(tooth):
     data = getModelData(tooth)
 
     valuesLists = np.zeros((40,14,2*lengthtraining+1))
     
-    for graphNumber in range(1,15):
-        img = visualize.readRadiograph(graphNumber)
+    for graphNumber in range(1,15-LeaveOneoutTest):
+        img = visualize.readRadiograph((graphNumber+counter)%14)
         toothData = data[:,graphNumber-1]
         
         
@@ -97,11 +99,18 @@ def line(x0, y0, x1, y1):
             y += sy   
     array.append((x,y))
     return array
-
+def getLandmarks(tooth):
+    result= np.zeros((80,14-LeaveOneoutTest))
+    f = open('Landmarks\original\landmarks'+str((14+counter) % 14+1)+'-'+str(tooth)+'.txt', 'r')
+    t=0
+    for j in f:
+        result[t,i]=int(float(j.rstrip()))
+        t = t+1
+    return result
 def getModelData(tooth):
-    result= np.zeros((80,14))
-    for i in range(14):
-        f = open('Landmarks\original\landmarks'+str(i+1)+'-'+str(tooth)+'.txt', 'r')
+    result= np.zeros((80,14-LeaveOneoutTest))
+    for i in range(14-LeaveOneoutTest):
+        f = open('Landmarks\original\landmarks'+str((i+counter) % 14+1)+'-'+str(tooth)+'.txt', 'r')
         t=0
         for j in f:
             result[t,i]=int(float(j.rstrip()))
@@ -109,7 +118,7 @@ def getModelData(tooth):
     return result
 def reallign(data):
     #1. Translate each example so that its centre of gravity is at the origin
-    for i in range(14):
+    for i in range(14-LeaveOneoutTest):
         x=0
         y=0
         for j in range(0,80,2):
@@ -140,7 +149,7 @@ def reallign(data):
                 data[j+1,i]= math.sin(t)*data[j,i]+math.cos(t)*data[j+1,i]
             data[:,i]=data[:,i]/s
         '''
-        for i in range(14):
+        for i in range(14-LeaveOneoutTest):
             #4.1 |xj|=1
             data[:,i] = data[:,i]/np.linalg.norm(data[:,i])
             #4.2 find angle
@@ -155,7 +164,7 @@ def reallign(data):
                 data[j,i]=math.cos(angle)*data[j,i]-math.sin(angle)*data[j+1,i]
                 data[j+1,i]=math.sin(angle)*data[j,i]+math.cos(angle)*data[j+1,i]
         #5. Re-estimate the mean from aligned shapes.
-        example =np.sum(data,axis=1)/14
+        example =np.sum(data,axis=1)/(14-LeaveOneoutTest)
         #6. Apply constraints on scale and orientation to the current estimate of the
         #mean by aligning it with x0 and scaling so that |x| = 1.
         '''
@@ -279,10 +288,11 @@ def getTestData():
     
 def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
     #per image
-    for graphNumber in range(1,15):
+    for graphNumber in range(14,15):
+        res=0
         #sobelx = sobelxList[graphNumber-1]
         #sobely = sobelyList[graphNumber-1]
-        img = visualize.readRadiograph(graphNumber)
+        img = visualize.readRadiograph((graphNumber+counter) % 14)
         img3 = img.copy()
         for tnum in range(1,9):
             #data = dataList[tnum-1]
@@ -362,12 +372,14 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
                 if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
+                    res = res+np.linalg.norm(genModel,getLandmarks(tnum))
                     print 'succeeded'
                     break
                 #print str(x1-lengthx)+','+str(min(genModel[::2]))+','+str(max(genModel[::2]))+','+str(x2+lengthx)
                 #print str(y1-lengthy)+','+str(min(genModel[1::2]))+','+str(max(genModel[1::2]))+','+str(y2+lengthy)
                 if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
                     visualize.addLandmarks(img3, genModel,False)
+                    res = res+np.linalg.norm(genModel,getLandmarks(tnum))
                     print 'exceeded'
                     break
                 if(counter == var):
@@ -375,7 +387,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
         img2=cv2.resize(img3,(1000,500))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
-        cv2.imwrite('Results/8teeth,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
+        print res
         
     return
   
