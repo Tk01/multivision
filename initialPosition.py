@@ -47,43 +47,29 @@ def normalize(img):
     return (img*(255./(np.max(img)-np.min(img)))+np.min(img)).astype(np.uint8)
  
  
-def makeData(resize1 = 500, resize2 = 500):
+def makeData(resize1 = 500, resize2 = 500, Upper=1):
     
     results = np.zeros((14,resize2,resize1))
     
     smallImages = np.zeros((14,resize1 * resize2))
-    
-    listLeftTooth = [
-    [(1305,743), (1415,1015)],
-[(1307,626),(1403,965)],
-[(1339,660),(1463,982)],
-[(1322,679),(1420,1006)],
-[(1345,733),(1478,984)],
-[(1324,653),(1456, 930)],
-[(1320,653),(1424,972)],
-[(1357,588),(1478,881)],
-[(1358,715),(1465,1053)],
-[(1305,513),(1404,870)],
-[(1251,647),(1374,967)],
-[(1346,742),(1450,985)],
-[(1322,532),(1430,846)],
-[(1283,715),(1390,1008)] ]
-    
-    listTopFourTeeth = [
-    [(1298,752),(1730,1017)],
-[(1311,650),(1704,1004)],
-[(1335,688),(1762,998)],
-[(1318,684),(1697,1028)],
-[(1346,728),(1758,993)],
-[(1331,627),(1740,950)],
-[(1318,660),(1707,993)],
-[(1365,647),(1710,902)],
-[(1365,749),(1737,1063)],
-[(1307,519),(1669,876)],
-[(1249,658),(1669,980)],
-[(1342,753),(1692,998)],
-[(1309,547),(1707,859)],
-[(1281,709),(1680,1039)] ]
+    if Upper ==0 :
+        listTopFourTeeth =[]
+    if Upper ==1 :
+        listTopFourTeeth = [
+        [(1298,752),(1730,1017)],
+    [(1311,650),(1704,1004)],
+    [(1335,688),(1762,998)],
+    [(1318,684),(1697,1028)],
+    [(1346,728),(1758,993)],
+    [(1331,627),(1740,950)],
+    [(1318,660),(1707,993)],
+    [(1365,647),(1710,902)],
+    [(1365,749),(1737,1063)],
+    [(1307,519),(1669,876)],
+    [(1249,658),(1669,980)],
+    [(1342,753),(1692,998)],
+    [(1309,547),(1707,859)],
+    [(1281,709),(1680,1039)] ]
 
     for graphNumber in range(1,15):
         img = visualize.readRadiograph(graphNumber)
@@ -96,21 +82,21 @@ def makeData(resize1 = 500, resize2 = 500):
         
         smallImages[graphNumber - 1] = result.flatten()
     
-    allImages = np.zeros((resize2 * 2, resize1*8))
-    for i in range(0,14):
-        row = int(round(i / 8))
-        col = i % 8
-        allImages[resize2*row:resize2*(row+1),resize1*col:resize1*(col+1)] = results[i,:,:]
-        #cv2.imshow('img' + str(i) ,np.uint8(results[i,:,:]))
-        #cv2.waitKey(0)
-    reAll = cv2.resize(allImages,(1500,750), interpolation=cv2.INTER_NEAREST)
-    #cv2.imshow('all initialization images' ,np.uint8(reAll))
-    #cv2.waitKey(0)
+    #allImages = np.zeros((resize2 * 2, resize1*8))
+    #for i in range(0,14):
+    #    row = int(round(i / 8))
+    #    col = i % 8
+    #    allImages[resize2*row:resize2*(row+1),resize1*col:resize1*(col+1)] = results[i,:,:]
+    #    #cv2.imshow('img' + str(i) ,np.uint8(results[i,:,:]))
+    #    #cv2.waitKey(0)
+    #reAll = cv2.resize(allImages,(1500,750), interpolation=cv2.INTER_NEAREST)
+    ##cv2.imshow('all initialization images' ,np.uint8(reAll))
+    ##cv2.waitKey(0)
     
     return smallImages   
        
           
-def findPosition(mean, eigenvectors, image, size1, size2):
+def findPosition(mean, eigenvectors, image, size1, size2,upper):
     m,n = image.shape
     
     best = 100000000
@@ -121,14 +107,20 @@ def findPosition(mean, eigenvectors, image, size1, size2):
         for size22 in range(11,21,3):
             s1 = int(size1 * size11 / 20)
             s2 = int(size2 * size22 / 20)
-            
-            
-            a1 = int(m / 2 - m / 8)
-            a2 = int(m / 2 + m / 8)
-            aStep = 40
-            b1 = int(n / 2 - n / 16)
-            b2 = int(n / 2 + n / 16)
-            bStep = 40
+            if upper ==0 :
+                a1 = int(m / 2)
+                a2 = int(m / 2 + m / 4)
+                aStep = 40
+                b1 = int(n / 2 - n / 16)
+                b2 = int(n / 2 + n / 16)
+                bStep = 40
+            if upper ==1 :
+                a1 = int(m / 2 - m / 8)
+                a2 = int(m / 2 + m / 8)
+                aStep = 40
+                b1 = int(n / 2 - n / 16)
+                b2 = int(n / 2 + n / 16)
+                bStep = 40
             
             #loop over all possible starting positions
             for i in range(a1,a2,aStep):
@@ -194,17 +186,23 @@ def findPositionFor(graphNumber, tooth):
     return [( b +(tooth-1)*(d-b)/4,a),(b +(tooth)*(d-b)/4,c)]
 
 def findPositionForAll():
-    allPositions = np.zeros((14,4,2,2))
+    allPositions = np.zeros((14,8,2,2))
     size1 = 500
     size2 = 400
     for i in range(1,15):
-        data = makeData(size1,size2)
+        data = makeData(size1,size2,1)
         [eigenvalues, eigenvectors, mean] = pca(data,5)
         img = visualize.readRadiograph(i)
-        [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2)
+        [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2,1)
         for j in range(1,5):
             allPositions[i-1,j-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]
-    
+    for i in range(1,15):
+        data = makeData(size1,size2,0)
+        [eigenvalues, eigenvectors, mean] = pca(data,5)
+        img = visualize.readRadiograph(i)
+        [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2,0)
+        for j in range(1,5):
+            allPositions[i-1,j+4-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]
     return allPositions
     
 if __name__ == '__main__':
