@@ -1,0 +1,52 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage[colorlinks, allcolors=black]{hyperref}
+\usepackage{geometry}
+\geometry{tmargin=3cm, bmargin=2.2cm, lmargin=2.2cm, rmargin=2cm}
+\usepackage{todonotes} %Used for the figure placeholders
+
+% Your name and student number must be filled in on the title page found in
+% titlepage.tex.
+
+\begin{document}
+\input{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}\label{sec:introduction}
+We needed to design an algorithm that is capable of automatically segmenting the 8 incisors on a radiograph.
+To accomplish this we were provided with 14 radiographs with the landmarks for each incisor. We used these landmarks to make a active shape model, section \ref{sec:alignment}. Before using these models for fitting the incisors of other radiographs, we made a method to find an initial guess for each incisor, section \ref{sec:initial}. When we have found the initial position, we then use the active shape models to fit to the incisors on the image, section \ref{sec:fit}. We tried different fitting algorithms, multiple variations of an energy based algorithm, section \ref{sec:fit_energy} and one derivative based algorithm, section \ref{sec:fit_deriv}. When implementing these algorithms we encountered some problems with convergence, section \ref{sec:convergence}. After some experimentation we decided that the derivative based algorithm gave the best results and thus we used this algorithm to do some more extensive tests, section \ref{sec:results}.
+
+
+\section{Alignment} \label{sec:alignment}
+To be able to combine all the different landmarks of each incisor they need to be comparable (same center, similar scale and rotation). We realigned the landmarks so they the same center, rotation and scale. To accomplish this we used Procrustes Analysis as described in protocol 4 of \cite{TemplateAlgorithm}. Convergence in step 7 of this protocol is achieved if every element of the new result differs at most 0.01 from the result of the previous iteration.
+
+\section{Convergence}\label{sec:convergence}
+When testing the different algorithms, we encountered a problem with the fitting of our contours: it didn't convergence completely. To solve this we first were a bit lenient about when convergence happened: if less than 10\% of the points describing the contour changed, we considered this converged. This approach gave us some better results, but it didn't solve the problem completely. We thought that the contours endlessly cycled between certain states. We solved this by introducing an extra condition: if each point of the contour changed at most 10 pixels in every 50 iterations, we considered this converged. This new condition guaranteed termination of the algorithm. 
+
+A second observation we made was that the contour would move outside the bounds of a reasonable solution. When this occurs, we would stop the execution of the fitting and consider the current result as best fit. We consider the bounds of a reasonable solution as a rectangle with trice the width and 140\% the height of the initial rectangle found as initial position, see section \ref{sec:initial}.
+\section{Initializing starting position}\label{sec:initial}
+
+
+\section{Contour fitting}\label{sec:fit}
+\subsection{Energy based}\label{sec:fit_energy}
+\subsubsection{Nearest edge based}
+\subsubsection{Gradient size based}
+\subsubsection{Orientated gradient size based}
+
+\subsection{Derivative based}\label{sec:fit_deriv}
+
+
+\section{Results}\label{sec:results}
+
+\section{Conclusion}
+
+
+\section{References}
+\bibliographystyle{plain}
+\bibliography{bib}
+
+\end{document}

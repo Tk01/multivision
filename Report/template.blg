@@ -1,0 +1,9 @@
+This is BibTeX, Version 0.99dThe top-level auxiliary file: template.aux
+The style file: plain.bst
+Database file #1: bib.bib
+I was expecting a `,' or a `}'---line 10 of file bib.bib
+ :   title = {Computer Vision [H02K5a] : Final Project: Model Reconstruction}
+ :                                                                           !
+I'm skipping whatever remains of this entry
+Warning--empty year in TemplateAlgorithm
+(There was 1 error message)
