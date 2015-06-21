@@ -18,7 +18,6 @@ iWeight1 = 1
 iWeight2 = 1
 lengthtraining = 5
 lengthtest = 10
-
 def lineData(tooth):
     data = getModelData(tooth)
 
@@ -285,7 +284,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
         #sobely = sobelyList[graphNumber-1]
         img = visualize.readRadiograph(graphNumber)
         img3 = img.copy()
-        for tnum in range(1,5):
+        for tnum in range(1,9):
             #data = dataList[tnum-1]
             vectors = vectorsList[tnum-1]
             mean = meanList[tnum-1]
@@ -376,7 +375,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
         img2=cv2.resize(img3,(1000,500))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
-        cv2.imwrite('Results/LastAttempt,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
+        cv2.imwrite('Results/8teeth,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(iWeight1) + ','+ str(iWeight2) + '.jpg',np.uint8(img2))
         
     return
   
@@ -583,8 +582,8 @@ def PCA(X, num_components=0):
     return [eigenvalues, eigenvectors, mu]
     
 if __name__ == '__main__':
-    reallignedData = [0]*4
-    for i in range(1,5):
+    reallignedData = [0]*8
+    for i in range(1,9):
         data = getModelData(i)
         reallignedData[i-1] = reallign(data)
     #list1 =[#(4,0.0,1.2),
@@ -633,10 +632,10 @@ if __name__ == '__main__':
         #        iWeight2 = k/10.0
         print str(numbersOfVectors)#+',' + str(iWeight1)+',' + str(iWeight2)
         sys.stdout.flush()
-        values = [0] * 4
-        vectors = [0] * 4
-        mean = [0] * 4
-        for a in range(1,5):
+        values = [0] * 8
+        vectors = [0] * 8
+        mean = [0] * 8
+        for a in range(1,9):
             [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
         testData = getTestData()
         result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2,teethdata)
