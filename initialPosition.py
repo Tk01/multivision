@@ -123,7 +123,7 @@ def findPosition(mean, eigenvectors, image, size1, size2,upper):
             s1 = int(size1 * size11 / 20)
             s2 = int(size2 * size22 / 20)
             if upper ==0 :
-                a1 = int(m / 2)
+                a1 = int(m / 2 + m / 8)
                 a2 = int(m / 2 + m / 4)
                 aStep = 40
                 b1 = int(n / 2 - n / 16)
@@ -165,7 +165,7 @@ def findPosition(mean, eigenvectors, image, size1, size2,upper):
                         sys.stdout.flush()
                         
             #print str(s1) + " - " + str(s2)
-            sys.stdout.flush()                
+            #sys.stdout.flush()                
     return (bestKader,bestIm)
 
 def testMatch(mean, vectors):
@@ -211,8 +211,8 @@ def findPositionForAll(counter,oneorzero):
         [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2,1)
         for j in range(1,5):
             allPositions[i-1,j-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]
-    size1 = 300
-    size2 = 250
+    size1 = 350
+    size2 = 300
     data = makeData(size1,size2,0)
     [eigenvalues, eigenvectors, mean] = pca(data,5)
     for i in range(1,15-oneorzero):
@@ -223,9 +223,12 @@ def findPositionForAll(counter,oneorzero):
     return allPositions
     
 if __name__ == '__main__':
-    size1 = 500
-    size2 = 400
-    data = makeData(size1,size2)
+    #print findPositionForAll(1,1)
+    #sys.stdout.flush()
+    
+    size1 = 350
+    size2 = 300
+    data = makeData(size1,size2,0)
     [eigenvalues, eigenvectors, mean] =  pca(data,5)
 
     
@@ -234,9 +237,9 @@ if __name__ == '__main__':
     allImages = np.zeros((size2 * 3, size1*5))
     
     
-    for graphNumber in range(1,2):
+    for graphNumber in range(1,15):
          img = visualize.readRadiograph(graphNumber)
-         [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2)
+         [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2,0)
          print str(a) + ',' + str(b) + " - " + str(c)+','+str(d)
          sys.stdout.flush()
          i = graphNumber - 1
@@ -244,7 +247,7 @@ if __name__ == '__main__':
          col = i % 5
          allImages[size2*row:size2*(row+1),size1*col:size1*(col+1)] = im
     
-    cv2.imwrite('/Results/allResultss.jpg',np.uint8(allImages))
+    cv2.imwrite('allResultss.jpg',np.uint8(allImages))
     
     cv2.imshow('all results of findPosition' ,np.uint8(allImages))
     cv2.waitKey(0)

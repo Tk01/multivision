@@ -376,6 +376,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
                 if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
+                    cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
                     res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'succeeded'
                     break
@@ -383,12 +384,14 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
                 #print str(y1-lengthy)+','+str(min(genModel[1::2]))+','+str(max(genModel[1::2]))+','+str(y2+lengthy)
                 if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
                     visualize.addLandmarks(img3, genModel,False)
+                    cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
                     res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'exceeded'
                     break
                 if(counter == var):
                     counter =0
         img2=cv2.resize(img3,(1000,500))
+        cv2.imwrite('Results/8teeth,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
         print str((graphNumber+Counter) % 14 +1) + str(res)
