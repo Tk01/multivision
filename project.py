@@ -285,13 +285,11 @@ def getTestData():
     return
     
     
-def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
+def fitDerivative(dataList,vectorsList,meanList,p1,teethData):
     global Counter
     #per image
     for graphNumber in range(14,15):
         res=0
-        #sobelx = sobelxList[graphNumber-1]
-        #sobely = sobelyList[graphNumber-1]
         img = visualize.readRadiograph((graphNumber+Counter) % 14 +1)
         img3 = img.copy()
         for tnum in range(1,9):
@@ -391,13 +389,218 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
                 if(counter == var):
                     counter =0
         img2=cv2.resize(img3,(1000,500))
-        cv2.imwrite('Results/8teeth,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
+        cv2.imwrite('Results/8teeth,der,' + str((graphNumber+Counter) % 14 +1) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
-        print str((graphNumber+Counter) % 14 +1) + str(res)
+        print 'derivative,'+str((graphNumber+Counter) % 14 +1) +',' + str(res)
         
     return
-  
+def fitOgr(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
+    global Counter
+    #per image
+    for graphNumber in range(14,15):
+        res=0
+        sobelx = sobelxList[graphNumber-1]
+        sobely = sobelyList[graphNumber-1]
+        img = visualize.readRadiograph((graphNumber+Counter) % 14 +1)
+        img3 = img.copy()
+        for tnum in range(1,9):
+            #data = dataList[tnum-1]
+            vectors = vectorsList[tnum-1]
+            mean = meanList[tnum-1]
+            #cv2.equalizeHist(img)
+            #step1 ask estimate
+            
+            #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
+            [(x1,y1),(x2,y2)] = p1[(graphNumber+Counter) % 14 ][tnum-1]
+            #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
+            lengthx =x2-x1
+            lengthy =y2-y1
+            #[array,vectorizedEdgeData] = findVectorizedEdgeData(img,(x1-lengthx,y1-lengthy),(x2+lengthx,y2+lengthy))
+            #visualize.displayVectorizedEdgeData(img, array)
+            genModel = adaptMean(mean,(x1,y1),(x2,y2))
+            counter=0
+            var = 50
+            #step2 examine the region around each point around Xi to find a new point Xi'
+            #gebaseerd op edge detection en distance
+            while True:
+
+                #counter = counter +1
+                #if counter == 100:
+                #    img2 = img.copy()
+                #    visualize.addLandmarks(img2, genModel,False)
+                #    img2=cv2.resize(img2,(1000,500))
+                #    cv2.imshow('img_res1',img2)
+                #    cv2.waitKey(0) 
+                #    counter =0
+                if(counter==0 ):
+                    genModelvar = list(genModel)
+                    for i in range(0,80):
+                        genModelvar[i]=int(round(genModelvar[i]))
+                genModel2 = list(genModel)
+                #Xt2 =Xt
+                #Yt2 =Yt
+                #s2 =s
+                #angle2 =angle
+                #b2 =b
+                #print genModel
+                #print meanV
+                #print matrix
+                #print img
+                genModel = improve(genModel,sobelx,sobely)
+                #sys.stdout.flush()
+                counter = counter +1
+                #print counter
+                #if counter == 500:
+                #    img2 = img3.copy()
+                #    visualize.addLandmarks(img2, genModel,True)
+                #    img2=cv2.resize(img2,(1000,500))
+                #    cv2.imshow('img_res2',img2)
+                #    cv2.waitKey(0)
+                #    counter =0
+            #step3 update paramaters
+                genModel= generateModel2(vectors,mean,genModel)
+                #img2 = img.copy()
+                #visualize.addLandmarks(img2, genModel,False)
+                #img2=cv2.resize(img2,(1000,500))
+                #cv2.imshow('img_res3',img2)
+                #cv2.waitKey(0) 
+            #step4 check constraints
+                #print genModelvar - genModel
+            #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
+            #b mag veranderen binnen gegeven grenzen
+            #repeat from 2 until convergence
+                #if max(abs(genModel2-genModel)) <0.01 and abs(Xt2-Xt) <0.01 and abs(Yt2-Yt) <0.01 and abs(s2-s) <0.01 and abs(angle2-angle) <0.01 and max(abs(b2-b)) <0.01:
+                diff=0
+                for i in range(0,80,2):
+                    if not (genModel2[i] == genModel[i] and genModel2[i+1] == genModel[i+1]):
+                            diff =diff+1
+                if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
+                    #visualize genModel
+                    visualize.addLandmarks(img3, genModel,False)
+                    cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
+                    print 'succeeded'
+                    break
+                #print str(x1-lengthx)+','+str(min(genModel[::2]))+','+str(max(genModel[::2]))+','+str(x2+lengthx)
+                #print str(y1-lengthy)+','+str(min(genModel[1::2]))+','+str(max(genModel[1::2]))+','+str(y2+lengthy)
+                if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
+                    visualize.addLandmarks(img3, genModel,False)
+                    cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
+                    print 'exceeded'
+                    break
+                if(counter == var):
+                    counter =0
+        img2=cv2.resize(img3,(1000,500))
+        cv2.imwrite('Results/8teeth,ogr,' + str((graphNumber+Counter) % 14 +1) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
+        #cv2.imshow('img_res4',img2)
+        #cv2.waitKey(0) 
+        print 'Orientated Gradient,'+str((graphNumber+Counter) % 14 +1) +',' + str(res)
+        
+    return 
+def fitNE(dataList,vectorsList,meanList,p1):
+    global Counter
+    #per image
+    for graphNumber in range(14,15):
+        res=0
+        img = visualize.readRadiograph((graphNumber+Counter) % 14 +1)
+        img3 = img.copy()
+        for tnum in range(1,9):
+            #data = dataList[tnum-1]
+            vectors = vectorsList[tnum-1]
+            mean = meanList[tnum-1]
+            #cv2.equalizeHist(img)
+            #step1 ask estimate
+            
+            #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
+            [(x1,y1),(x2,y2)] = p1[(graphNumber+Counter) % 14 ][tnum-1]
+            #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
+            lengthx =x2-x1
+            lengthy =y2-y1
+            [array,vectorizedEdgeData] = findVectorizedEdgeData(img,(x1-lengthx,y1-lengthy),(x2+lengthx,y2+lengthy),tnum)
+            #visualize.displayVectorizedEdgeData(img, array)
+            genModel = adaptMean(mean,(x1,y1),(x2,y2))
+            counter=0
+            var = 50
+            #step2 examine the region around each point around Xi to find a new point Xi'
+            #gebaseerd op edge detection en distance
+            while True:
+
+                #counter = counter +1
+                #if counter == 100:
+                #    img2 = img.copy()
+                #    visualize.addLandmarks(img2, genModel,False)
+                #    img2=cv2.resize(img2,(1000,500))
+                #    cv2.imshow('img_res1',img2)
+                #    cv2.waitKey(0) 
+                #    counter =0
+                if(counter==0 ):
+                    genModelvar = list(genModel)
+                    for i in range(0,80):
+                        genModelvar[i]=int(round(genModelvar[i]))
+                genModel2 = list(genModel)
+                #Xt2 =Xt
+                #Yt2 =Yt
+                #s2 =s
+                #angle2 =angle
+                #b2 =b
+                #print genModel
+                #print meanV
+                #print matrix
+                #print img
+                genModel = improve2(genModel,vectorizedEdgeData,array)[0]
+                #sys.stdout.flush()
+                counter = counter +1
+                #print counter
+                #if counter == 500:
+                #    img2 = img3.copy()
+                #    visualize.addLandmarks(img2, genModel,True)
+                #    img2=cv2.resize(img2,(1000,500))
+                #    cv2.imshow('img_res2',img2)
+                #    cv2.waitKey(0)
+                #    counter =0
+            #step3 update paramaters
+                genModel= generateModel2(vectors,mean,genModel)
+                #img2 = img.copy()
+                #visualize.addLandmarks(img2, genModel,False)
+                #img2=cv2.resize(img2,(1000,500))
+                #cv2.imshow('img_res3',img2)
+                #cv2.waitKey(0) 
+            #step4 check constraints
+                #print genModelvar - genModel
+            #scaling mag, rotatie mag, beide niet te veel, weinig translation verandering tov estimate
+            #b mag veranderen binnen gegeven grenzen
+            #repeat from 2 until convergence
+                #if max(abs(genModel2-genModel)) <0.01 and abs(Xt2-Xt) <0.01 and abs(Yt2-Yt) <0.01 and abs(s2-s) <0.01 and abs(angle2-angle) <0.01 and max(abs(b2-b)) <0.01:
+                diff=0
+                for i in range(0,80,2):
+                    if not (genModel2[i] == genModel[i] and genModel2[i+1] == genModel[i+1]):
+                            diff =diff+1
+                if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
+                    #visualize genModel
+                    visualize.addLandmarks(img3, genModel,False)
+                    cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
+                    print 'succeeded'
+                    break
+                #print str(x1-lengthx)+','+str(min(genModel[::2]))+','+str(max(genModel[::2]))+','+str(x2+lengthx)
+                #print str(y1-lengthy)+','+str(min(genModel[1::2]))+','+str(max(genModel[1::2]))+','+str(y2+lengthy)
+                if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
+                    visualize.addLandmarks(img3, genModel,False)
+                    cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
+                    print 'exceeded'
+                    break
+                if(counter == var):
+                    counter =0
+        img2=cv2.resize(img3,(1000,500))
+        cv2.imwrite('Results/8teeth,ne,' + str((graphNumber+Counter) % 14 +1) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
+        #cv2.imshow('img_res4',img2)
+        #cv2.waitKey(0) 
+        print 'Nearest Edge,'+str((graphNumber+Counter) % 14 +1) +',' + str(res)
+        
+    return 
 def adaptMean(mean,(x1,y1),(x2,y2)):
     mean = list(mean)
     lengthx = x2-x1
@@ -416,32 +619,40 @@ def adaptMean(mean,(x1,y1),(x2,y2)):
         mean[x+1]=meany[x/2]
     return mean
     
-def findVectorizedEdgeData(img,(x1,y1),(x2,y2)):
+def findVectorizedEdgeData(img,(x1,y1),(x2,y2),toothnumber):
     #bovenkant
     filter_length = 5
     sigma = 1
    # result = cv2.bilateralFilter(img,12,17,17)
-    result1 = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)  
-    edges1 = cv2.Canny(np.uint8(result1), 15, 30)
+    if toothnumber <5:
+        result1 = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)  
+        edges1 = cv2.Canny(np.uint8(result1), 15, 30)
+    else:
+        result1 = cv2.bilateralFilter(img,12,17,17)
+        edges1 = cv2.Canny(np.uint8(result1), 1, 45)
     #onderkant
     filter_length = 5
     sigma = 1
-    result = cv2.bilateralFilter(img,12,17,17)
-    edges = cv2.Canny(np.uint8(result), 1, 45)
+    if toothnumber <5:
+        result = cv2.bilateralFilter(img,12,17,17)
+        edges = cv2.Canny(np.uint8(result), 1, 45)
+    else:
+        result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)  
+        edges = cv2.Canny(np.uint8(result), 15, 30)
     #result = cv2.GaussianBlur(img, (filter_length,filter_length),sigma)  
     mid = (y1 + y2 ) / 2
     
     edges[0:mid][:] = edges1[0:mid][:]
     
-    img2=cv2.resize(result,(1000,500))
-    cv2.imshow('img_filtered',img2)
-    cv2.waitKey(0)
+    #img2=cv2.resize(result,(1000,500))
+    #cv2.imshow('img_filtered',img2)
+    #cv2.waitKey(0)
     
 
     array = []
     [M,N] = np.shape(edges)
-    for x in range(x1,x2+1):
-        for y in range(y1,y2+1):
+    for x in range(int(x1),int(x2+1)):
+        for y in range(int(y1),int(y2+1)):
             if y>=0 and y< M and x>=0 and x< N and edges[y,x] != 0:
                 array.append((y,x))
     return [array,scipy.spatial.KDTree(array)]
@@ -521,7 +732,6 @@ def improve(mean,sobelx,sobely):
             meanD=meanD+distance((mean[m],mean[m+1]),(mean[n],mean[n+1]))
             hi=hi+1
     meanD=meanD/hi
-
     states = np.zeros((9,80))
     #initialisser met 9 nearestEdgePoints van 1ste punt? (mss sneller?)
     for l in range(0,80,2):
@@ -557,8 +767,8 @@ def intenerg(l,copyS,meanD):
     
 def extenerg(copyS,sobelx,sobely,l ):
     res=0
-    for i in range(2,l,2):
-        res=res-np.linalg.norm([sobelx[copyS[l+1]][copyS[l]],sobely[copyS[l+1]][copyS[l]]])*math.cos(np.arctan(sobely[copyS[l+1]][copyS[l]]/sobelx[copyS[l+1]][copyS[l]]) - (np.arctan((copyS[l]-copyS[l-2])/(copyS[l+1]-copyS[l-1]))-math.pi/2))
+    for i in range(4,l,2):
+        res=res-np.linalg.norm([sobelx[copyS[l-1]][copyS[l-2]],sobely[copyS[l-1]][copyS[l-2]]])*math.cos(np.arctan(sobely[copyS[l-1]][copyS[l-2]]/sobelx[copyS[l-1]][copyS[l-2]]) - (np.arctan((copyS[l+1]-copyS[l-3])/(copyS[l]-copyS[l-4]))-math.pi/2))
     return res
   
 
@@ -601,51 +811,51 @@ def PCA(X, num_components=0):
     return [eigenvalues, eigenvectors, mu]
     
 if __name__ == '__main__':
-    reallignedData = [0]*8
-    for i in range(1,9):
-        data = getModelData(i)
-        reallignedData[i-1] = reallign(data)
-    #list1 =[#(4,0.0,1.2),
-    #    #(4,0.4,0.0),
-    #    #(4,0.8,0.8),
-    #    #(4,0.8,1.2),
-    #    #(4,1.2,0.4),
-    #    #(4,1.2,0.8),
-    #    #(6,0.0,0.8),
-    #    #(6,0.0,1.6),
-    #    (6,0.4,0.4),
-    #    (6,0.4,1.2),
-    #    (6,0.8,0.4),
-    #    (6,0.8,1.6),
-    #    (6,1.2,0.0),
-    #    (8,0.0,0.4),
-    #    (8,0.0,1.2),
-    #    (8,0.4,0.4),
-    #    (8,0.4,0.8),
-    #    (8,0.8,0.4),
-    #    (8,0.8,0.8),
-    #    (8,1.6,0.8),
-    #    (8,1.6,1.2)]
-    #kevin oneven numberOfVectors 1,3,5,..
-    #tim even numberOfVectors 2,4,6,...
-    teethdata =[0]*8
-    for tnum in range(1,9):
-        teethdata[tnum-1]=lineData(tnum)
-        
-    p2=initialPosition.findPositionForAll(Counter,LeaveOneoutTest)
-    sobelxx = [0]*14
-    sobelyy = [0]*14
-    #for graphNumber in range(1,15):
-       # img = visualize.readRadiograph(graphNumber)
-       # sobelxx[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
-       # sobelyy[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
-    #for (i,j,k) in list1:
-    #    numbersOfVectors = i
-    #    iWeight1 = j
-    #    iWeight2 = k
-    for i in [4,6,8,2,10,12,14]:
-        for g in range(0,14):
-            Counter = g;
+    for g in range(0,14):
+        Counter = g;
+        reallignedData = [0]*8
+        for i in range(1,9):
+            data = getModelData(i)
+            reallignedData[i-1] = reallign(data)
+        #list1 =[#(4,0.0,1.2),
+        #    #(4,0.4,0.0),
+        #    #(4,0.8,0.8),
+        #    #(4,0.8,1.2),
+        #    #(4,1.2,0.4),
+        #    #(4,1.2,0.8),
+        #    #(6,0.0,0.8),
+        #    #(6,0.0,1.6),
+        #    (6,0.4,0.4),
+        #    (6,0.4,1.2),
+        #    (6,0.8,0.4),
+        #    (6,0.8,1.6),
+        #    (6,1.2,0.0),
+        #    (8,0.0,0.4),
+        #    (8,0.0,1.2),
+        #    (8,0.4,0.4),
+        #    (8,0.4,0.8),
+        #    (8,0.8,0.4),
+        #    (8,0.8,0.8),
+        #    (8,1.6,0.8),
+        #    (8,1.6,1.2)]
+        #kevin oneven numberOfVectors 1,3,5,..
+        #tim even numberOfVectors 2,4,6,...
+        teethdata =[0]*8
+        for tnum in range(1,9):
+            teethdata[tnum-1]=lineData(tnum)
+            
+        p2=initialPosition.findPositionForAll(LeaveOneoutTest,Counter)
+        sobelxx = [0]*14
+        sobelyy = [0]*14
+        for graphNumber in range(1,15):
+            img = visualize.readRadiograph(graphNumber)
+            sobelxx[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
+            sobelyy[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
+        #for (i,j,k) in list1:
+        #    numbersOfVectors = i
+        #    iWeight1 = j
+        #    iWeight2 = k
+        for i in [4,6,8,10]:
             numbersOfVectors = i
             #for j in range(0,20,4):
             #    iWeight1 = j/10.0
@@ -659,4 +869,7 @@ if __name__ == '__main__':
             for a in range(1,9):
                 [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
             testData = getTestData()
-            result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2,teethdata)
+            result = fitNE(reallignedData, vectors, mean,p2)
+            result = fitOgr(reallignedData, vectors, mean,sobelxx,sobelyy,p2)
+            result = fitDerivative(reallignedData, vectors, mean,p2,teethdata)
+            
