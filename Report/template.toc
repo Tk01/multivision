@@ -8,7 +8,7 @@
 \contentsline {subsection}{\numberline {5.2}Energy based}{3}{subsection.5.2}
 \contentsline {subsubsection}{\numberline {5.2.1}Gradient size based}{3}{subsubsection.5.2.1}
 \contentsline {subsubsection}{\numberline {5.2.2}Orientated gradient size based}{3}{subsubsection.5.2.2}
-\contentsline {subsection}{\numberline {5.3}Derivative based}{3}{subsection.5.3}
-\contentsline {section}{\numberline {6}Results}{3}{section.6}
-\contentsline {section}{\numberline {7}Conclusion}{3}{section.7}
-\contentsline {section}{\numberline {8}References}{3}{section.8}
+\contentsline {subsection}{\numberline {5.3}Profile based}{3}{subsection.5.3}
+\contentsline {section}{\numberline {6}Results}{4}{section.6}
+\contentsline {section}{\numberline {7}Conclusion}{4}{section.7}
+\contentsline {section}{\numberline {8}References}{4}{section.8}
