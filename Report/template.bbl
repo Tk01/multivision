@@ -9,6 +9,12 @@
 \bibitem{GenerateModel}
 Computer vision [h02k5a] : Final project: Model reconstruction.
 
+\bibitem{OrientatedEnergy}
+Hong Chen and Anil~K. Jain.
+\newblock Tooth contour extraction for matching dental radiographs.
+\newblock
+  \url{http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1334581&tag=1}.
+
 \bibitem{TemplateAlgorithm}
 Tim Cootes.
 \newblock Model-based methods in analysis of biomedical images.
