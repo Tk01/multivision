@@ -19,14 +19,14 @@ iWeight2 = 1
 lengthtraining = 5
 lengthtest = 10
 LeaveOneoutTest =1
-counter = 1
+Counter = 1
 def lineData(tooth):
     data = getModelData(tooth)
 
     valuesLists = np.zeros((40,14,2*lengthtraining+1))
     
     for graphNumber in range(0,14-LeaveOneoutTest):
-        img = visualize.readRadiograph((graphNumber+counter)%14+1)
+        img = visualize.readRadiograph((graphNumber+Counter)%14+1)
         toothData = data[:,graphNumber-1]        
         
         normals = getNormals(toothData)
@@ -100,7 +100,7 @@ def line(x0, y0, x1, y1):
     return array
 def getLandmarks(tooth):
     result= np.zeros((80))
-    f = open('Landmarks\original\landmarks'+str((14+counter) % 14+1)+'-'+str(tooth)+'.txt', 'r')
+    f = open('Landmarks\original\landmarks'+str((14+Counter) % 14+1)+'-'+str(tooth)+'.txt', 'r')
     t=0
     for j in f:
         result[t]=int(float(j.rstrip()))
@@ -109,7 +109,7 @@ def getLandmarks(tooth):
 def getModelData(tooth):
     result= np.zeros((80,14-LeaveOneoutTest))
     for i in range(14-LeaveOneoutTest):
-        f = open('Landmarks\original\landmarks'+str((i+counter) % 14+1)+'-'+str(tooth)+'.txt', 'r')
+        f = open('Landmarks\original\landmarks'+str((i+Counter) % 14+1)+'-'+str(tooth)+'.txt', 'r')
         t=0
         for j in f:
             result[t,i]=int(float(j.rstrip()))
@@ -286,25 +286,25 @@ def getTestData():
     
     
 def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
-    global counter
+    global Counter
     #per image
     for graphNumber in range(14,15):
         res=0
         #sobelx = sobelxList[graphNumber-1]
         #sobely = sobelyList[graphNumber-1]
-        img = visualize.readRadiograph((graphNumber+counter) % 14 +1)
+        img = visualize.readRadiograph((graphNumber+Counter) % 14 +1)
         img3 = img.copy()
         for tnum in range(1,9):
             #data = dataList[tnum-1]
             vectors = vectorsList[tnum-1]
             mean = meanList[tnum-1]
-            meanV = teethData[tnum][0]
-            matrix = teethData[tnum][1]
+            meanV = teethData[tnum-1][0]
+            matrix = teethData[tnum-1][1]
             #cv2.equalizeHist(img)
             #step1 ask estimate
             
             #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
-            [(x1,y1),(x2,y2)] = p1[(graphNumber+counter) % 14 ][tnum-1]
+            [(x1,y1),(x2,y2)] = p1[(graphNumber+Counter) % 14 ][tnum-1]
             #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
             lengthx =x2-x1
             lengthy =y2-y1
@@ -341,6 +341,10 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
                 #s2 =s
                 #angle2 =angle
                 #b2 =b
+                #print genModel
+                #print meanV
+                #print matrix
+                #print img
                 genModel = improve3(genModel,meanV,matrix,img)
                 #sys.stdout.flush()
                 counter = counter +1
@@ -387,7 +391,7 @@ def fit(dataList,vectorsList,meanList,sobelxList,sobelyList,p1,teethData):
         img2=cv2.resize(img3,(1000,500))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
-        print res
+        print str((graphNumber+Counter) % 14 +1) + str(res)
         
     return
   
@@ -625,7 +629,7 @@ if __name__ == '__main__':
     for tnum in range(1,9):
         teethdata[tnum-1]=lineData(tnum)
         
-    p2=initialPosition.findPositionForAll(counter,LeaveOneoutTest)
+    p2=initialPosition.findPositionForAll(Counter,LeaveOneoutTest)
     sobelxx = [0]*14
     sobelyy = [0]*14
     #for graphNumber in range(1,15):
@@ -637,17 +641,19 @@ if __name__ == '__main__':
     #    iWeight1 = j
     #    iWeight2 = k
     for i in [4,6,8,2,10,12,14]:
-        numbersOfVectors = i
-        #for j in range(0,20,4):
-        #    iWeight1 = j/10.0
-        #    for k in range(0,20,4):
-        #        iWeight2 = k/10.0
-        print str(numbersOfVectors)#+',' + str(iWeight1)+',' + str(iWeight2)
-        sys.stdout.flush()
-        values = [0] * 8
-        vectors = [0] * 8
-        mean = [0] * 8
-        for a in range(1,9):
-            [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
-        testData = getTestData()
-        result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2,teethdata)
+        for g in range(0,14):
+            Counter = g;
+            numbersOfVectors = i
+            #for j in range(0,20,4):
+            #    iWeight1 = j/10.0
+            #    for k in range(0,20,4):
+            #        iWeight2 = k/10.0
+            print str(numbersOfVectors)#+',' + str(iWeight1)+',' + str(iWeight2)
+            sys.stdout.flush()
+            values = [0] * 8
+            vectors = [0] * 8
+            mean = [0] * 8
+            for a in range(1,9):
+                [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
+            testData = getTestData()
+            result = fit(reallignedData, vectors, mean,sobelxx,sobelyy,p2,teethdata)
