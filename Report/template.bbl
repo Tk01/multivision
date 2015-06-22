@@ -1,5 +1,14 @@
 \begin{thebibliography}{1}
 
+\bibitem{Canny}
+\url{http://docs.opencv.org/modules/imgproc/doc/feature_detection.html?highlight=canny#canny}.
+
+\bibitem{PythonFilters}
+\url{http://docs.opencv.org/modules/imgproc/doc/filtering.html}.
+
+\bibitem{GenerateModel}
+Computer vision [h02k5a] : Final project: Model reconstruction.
+
 \bibitem{TemplateAlgorithm}
 Tim Cootes.
 \newblock Model-based methods in analysis of biomedical images.
