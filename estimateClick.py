@@ -1,6 +1,6 @@
 import cv2
 import visualize
- 
+# made by www.pyimagesearch.com/2015/03/09/capturing-mouse-click-events-with-python-and-opencv/
 # initialize the list of reference points
 refPt = []
 image = []
@@ -77,11 +77,3 @@ def askForEstimate(radiograph):
     image = []
     
     return [(x1,y1),(x2,y2)]
-    
-
-if __name__ == '__main__':
-    for graphNumber in range(1,2):
-        img = visualize.readRadiograph(graphNumber)
-        #step1 ask estimate
-        [(x1,y1),(x2,y2)] = askForEstimate(img)
-        print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)

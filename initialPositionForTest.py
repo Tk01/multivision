@@ -29,27 +29,18 @@ def pca(X, num_components=0):
         eigenvectors = np.dot(X.T,eigenvectors)
         for i in xrange(n):
             eigenvectors[:,i] = eigenvectors[:,i]/np.linalg.norm(eigenvectors[:,i])
-    # or simply perform an economy size decomposition
-    # eigenvectors, eigenvalues, variance = np.linalg.svd(X.T, full_matrices=False)
-    # sort eigenvectors descending by their eigenvalue
     idx = np.argsort(-eigenvalues)
     eigenvalues = eigenvalues[idx]
     eigenvectors = eigenvectors[:,idx]
-    # select only num_components
     eigenvalues = eigenvalues[0:num_components].copy()
     eigenvectors = eigenvectors[:,0:num_components].copy()
     return [eigenvalues, eigenvectors, mu]
     
 def normalize(img):
-    '''
-    Normalize an image such that it min=0 , max=255 and type is np.uint8
-    '''
     return (img*(255./(np.max(img)-np.min(img)))+np.min(img)).astype(np.uint8)
  
  
 def makeData(resize1 = 500, resize2 = 500, Upper=1,LeaveOneoutTest=0,Counter=0):
-    
-    results = np.zeros((14-LeaveOneoutTest,resize2,resize1))
     
     smallImages = np.zeros((14-LeaveOneoutTest,resize1 * resize2))
     if Upper ==0 :
@@ -88,25 +79,12 @@ def makeData(resize1 = 500, resize2 = 500, Upper=1,LeaveOneoutTest=0,Counter=0):
 
     for graphNumber in range(1,15-LeaveOneoutTest):
         img = visualize.readRadiograph((graphNumber +Counter) %14 +1)
-        
-        #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
         [(x1,y1),(x2,y2)] = listTopFourTeeth[(graphNumber +Counter) %14]
         cutImage = img[y1:y2,x1:x2]
         result = cv2.resize(cutImage,(resize1,resize2), interpolation=cv2.INTER_NEAREST)
-        results[graphNumber-1,:,:] = result
+
         
         smallImages[graphNumber-1] = result.flatten()
-    
-    #allImages = np.zeros((resize2 * 2, resize1*8))
-    #for i in range(0,14):
-    #    row = int(round(i / 8))
-    #    col = i % 8
-    #    allImages[resize2*row:resize2*(row+1),resize1*col:resize1*(col+1)] = results[i,:,:]
-    #    #cv2.imshow('img' + str(i) ,np.uint8(results[i,:,:]))
-    #    #cv2.waitKey(0)
-    #reAll = cv2.resize(allImages,(1500,750), interpolation=cv2.INTER_NEAREST)
-    #cv2.imshow('all initialization images' ,np.uint8(reAll))
-    #cv2.waitKey(0)
     
     return smallImages   
        
@@ -137,7 +115,6 @@ def findPosition(mean, eigenvectors, image, size1, size2,upper):
                 b2 = int(n / 2 + n / 16)
                 bStep = 40
             
-            #loop over all possible starting positions
             for i in range(a1,a2,aStep):
                 for j in range(b1,b2,bStep):
                     min1 = i - s2/2
@@ -146,9 +123,7 @@ def findPosition(mean, eigenvectors, image, size1, size2,upper):
                     max2 = j + s1/2
                     
                     cutImage = image[min1:max1,min2:max2]
-                    
-                    #cv2.imshow(str(size11)+ ' - ' + str(size22) + '  /  ' + str(i) + ' - ' + str(j) ,cutImage)
-                    #cv2.waitKey(0)
+
                     
                     reCut = cv2.resize(cutImage,(size1,size2), interpolation=cv2.INTER_NEAREST)
                     X = reCut.flatten()
@@ -156,37 +131,10 @@ def findPosition(mean, eigenvectors, image, size1, size2,upper):
                     reX= reconstruct(eigenvectors, Y, mean)
                     
                     if np.linalg.norm(reX-X) < best:
-                        #cv2.imshow(str(size11)+ ' - ' + str(size22) + '  /  ' + str(i) + ' - ' + str(j) ,reCut)
-                        #cv2.waitKey(0)
                         best = np.linalg.norm(reX-X)
                         bestKader = [(min1,min2),(max1,max2)]
-                        bestIm = reCut
-                        #print best
-                        sys.stdout.flush()
-                        
-            #print str(s1) + " - " + str(s2)
-            #sys.stdout.flush()                
+                        bestIm = reCut               
     return (bestKader,bestIm)
-
-def testMatch(mean, vectors):
-    
-    image = visualize.readRadiograph(1)
-    
-    
-    [(x1,y1),(x2,y2)] = estimateClick.askForEstimate(image)
-    
-    cutImage = image[y1:y2,x1:x2]
-                
-    reCut = cv2.resize(cutImage,(size1,size2), interpolation=cv2.INTER_NEAREST)
-    X = reCut.flatten()
-    Y = project(eigenvectors, X, mean )
-    reX= reconstruct(eigenvectors, Y, mean)
-    
-    
-    print np.linalg.norm(reX-X)
-    sys.stdout.flush()
-    #cv2.imshow('img' ,reCut)
-    #cv2.waitKey(0)
 
 
 def findPositionFor(graphNumber, tooth):
@@ -199,44 +147,6 @@ def findPositionFor(graphNumber, tooth):
     [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2)
     
     return [( b +(tooth-1)*(d-b)/4,a),(b +(tooth)*(d-b)/4,c)]
-#def findPositionForAll2(counter,oneorzero):
-#
-#    listTopFourTeeth =[
-#    [(1339,1004),(1698,1261)],
-#    [(1346,1002),(1658,1223)],
-#    [(1357,1029),(1639,1245)],
-#    [(1383,1041),(1649,1290)],
-#    [(1361,991),(1669,1229)],
-#    [(1387,961),(1688,1210)],
-#    [(1368,1013),(1645,1251)],
-#    [(1357,887),(1610,1121)],
-#    [(1402,1065),(1633,1296)],
-#    [(1348,907),(1621,1175)],
-#    [(1316,1011),(1651,1290)],
-#    [(1394,985),(1658,1192)],
-#    [(1372,913),(1636,1195)],
-#    [(1344,1019),(1648,1325)]
-#    ]
-#    listTopFourTeeth = [
-#    [(1298,752),(1730,1017)],
-#    [(1311,650),(1704,1004)],
-#    [(1335,688),(1762,998)],
-#    [(1318,684),(1697,1028)],
-#    [(1346,728),(1758,993)],
-#    [(1331,627),(1740,950)],
-#    [(1318,660),(1707,993)],
-#    [(1365,647),(1710,902)],
-#    [(1365,749),(1737,1063)],
-#    [(1307,519),(1669,876)],
-#    [(1249,658),(1669,980)],
-#    [(1342,753),(1692,998)],
-#    [(1309,547),(1707,859)],
-#    [(1281,709),(1680,1039)] ]
-#    for i in range(1,15-oneorzero):
-#        img = visualize.readRadiograph((i+counter)%14+1)
-#        [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2,1)
-#        for j in range(1,5):
-#            allPositions[i-1,j-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]
 def findPositionForAll(LeaveOneoutTest,Counter):
     allPositions = np.zeros((14,8,2,2))
     size1 = 500
@@ -258,33 +168,3 @@ def findPositionForAll(LeaveOneoutTest,Counter):
         for j in range(1,5):
             allPositions[i-1,j+4-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]
     return allPositions
-    
-if __name__ == '__main__':
-    #print findPositionForAll(1,1)
-    #sys.stdout.flush()
-    
-    size1 = 350
-    size2 = 300
-    data = makeData(size1,size2,0)
-    [eigenvalues, eigenvectors, mean] =  pca(data,5)
-
-    
-    #testMatch(mean,eigenvectors)
-    
-    allImages = np.zeros((size2 * 3, size1*5))
-    
-    
-    for graphNumber in range(1,15):
-         img = visualize.readRadiograph(graphNumber)
-         [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2,0)
-         print str(a) + ',' + str(b) + " - " + str(c)+','+str(d)
-         sys.stdout.flush()
-         i = graphNumber - 1
-         row = int(round(i / 5))
-         col = i % 5
-         allImages[size2*row:size2*(row+1),size1*col:size1*(col+1)] = im
-    
-    cv2.imwrite('allResultss.jpg',np.uint8(allImages))
-    
-    cv2.imshow('all results of findPosition' ,np.uint8(allImages))
-    cv2.waitKey(0)
