@@ -395,6 +395,7 @@ def fitDerivative(dataList,vectorsList,meanList,p1,teethData):
 def fitOgr(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
     #per image
     for graphNumber in range(1,15):
+        finalModels = np.zeros((8,80))
         res=0
         sobelx = sobelxList[graphNumber-1]
         sobely = sobelyList[graphNumber-1]
@@ -472,6 +473,7 @@ def fitOgr(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
                     if not (genModel2[i] == genModel[i] and genModel2[i+1] == genModel[i+1]):
                             diff =diff+1
                 if diff <5 or (counter == var and max(genModelvar - genModel)<10 and min(genModelvar - genModel)>-10):
+                    finalModels[tnum-1] = genModel
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
                     cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
@@ -481,6 +483,7 @@ def fitOgr(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
                 #print str(x1-lengthx)+','+str(min(genModel[::2]))+','+str(max(genModel[::2]))+','+str(x2+lengthx)
                 #print str(y1-lengthy)+','+str(min(genModel[1::2]))+','+str(max(genModel[1::2]))+','+str(y2+lengthy)
                 if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
+                    finalModels[tnum-1] = genModel
                     visualize.addLandmarks(img3, genModel,False)
                     cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
                     res = res+np.linalg.norm(genModel-getLandmarks(graphNumber,tnum))
@@ -494,7 +497,48 @@ def fitOgr(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
         #cv2.waitKey(0) 
         print 'Orientated Gradient,'+str(graphNumber) +',' + str(res)
         
-    return 
+        showSegmentations(graphNumber, finalModels)
+        
+    return
+
+def showSegmentations(graphNumber, eightresults):
+    image = visualize.readRadiograph(graphNumber)
+    m,n = image.shape
+    segmentation = np.zeros((m,n), np.uint8)
+    for contour in eightresults:
+        minA = int(min(contour[0::2]))-10
+        maxA = int(max(contour[0::2]))+10
+        minB = int(min(contour[1::2]))-10
+        maxB = int(max(contour[1::2]))+10
+        lengthB = maxB - minB
+        lengthA = maxA - minA
+        white = np.ones((lengthB+1,lengthA+1), np.uint8)
+        for i in range(0,80,2):
+            pixels = line(int(contour[(i) % 80]),int(contour[(i+1) % 80]),int(contour[(i+2) % 80]),int(contour[(i+3) % 80]))
+            for (a,b) in pixels:
+                white[b-minB,a-minA] = 0
+                segmentation[b,a] = 1
+                
+
+        
+        thelist = [(0,0),(lengthB,0),(0,lengthA),(lengthB,lengthA)]
+        while thelist:
+            newList = []
+            for (b,a) in thelist:
+                if a >= 0 and b >= 0 and a < lengthA+1 and b < lengthB+1 and white[b,a] == 1:
+                    white[b,a] = 0
+                    newList.append((b-1,a))
+                    newList.append((b+1,a))
+                    newList.append((b,a-1))
+                    newList.append((b,a+1))
+            thelist = newList 
+
+        white = white * 255
+        segmentation[minB:(maxB+1),minA:(maxA+1)] = segmentation[minB:(maxB+1),minA:(maxA+1)] + white
+    
+    
+    cv2.imwrite('Results/segment,' + str(graphNumber) + '.jpg' ,segmentation)  
+      
 def fitNE(dataList,vectorsList,meanList,p1):
     #per image
     for graphNumber in range(1,15):
