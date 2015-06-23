@@ -3,18 +3,18 @@ import cv2.cv as cv
 import numpy as np
 import project
 
-def addLandmarks(img, landmarks, lines = True):
+def addLandmarks(img, landmarks, lines = True, color = (255,255,255)):
     
     for i in range(0,len(landmarks),2):
         x = int(landmarks[i])
         y = int(landmarks[i+1])
-        cv2.circle(img,(x,y), 5, (255,255,255), -1)
+        cv2.circle(img,(x,y), 5, color, -1)
     if lines:
         lenLand = len(landmarks)
         for i in range(0,lenLand,2):
             p1 = (int(landmarks[i]),int(landmarks[i+1]))
             p2 = (int(landmarks[(i+2)%lenLand]),int(landmarks[(i+3)%lenLand]))
-            cv2.line(img,p1,p2, (255,255,255), 2)
+            cv2.line(img,p1,p2, color, 2)
 
 def showLandmarksOnAllRadioGraphs(realIm = True, show = False):
     for n in range(1,15):

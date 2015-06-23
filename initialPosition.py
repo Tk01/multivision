@@ -196,7 +196,11 @@ def findPositionFor(graphNumber, tooth):
     data = makeData(size1,size2)
     [eigenvalues, eigenvectors, mean] = pca(data,5)
     img = visualize.readRadiograph(graphNumber)
-    [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2)
+    isUpper = 0
+    if tooth < 4:
+        isUpper = 1
+    
+    [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2, isUpper)
     
     return [( b +(tooth-1)*(d-b)/4,a),(b +(tooth)*(d-b)/4,c)]
 #def findPositionForAll2(counter,oneorzero):

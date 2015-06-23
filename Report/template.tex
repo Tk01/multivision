@@ -5,6 +5,7 @@
 \usepackage[colorlinks, allcolors=black]{hyperref}
 \usepackage{geometry}
 \usepackage{csvsimple}
+\usepackage{subcaption}
 \geometry{tmargin=3cm, bmargin=2.2cm, lmargin=2.2cm, rmargin=2cm}
 \usepackage{todonotes} %Used for the figure placeholders
 
@@ -19,37 +20,67 @@
 
 \section{Introduction}\label{sec:introduction}
 We needed to design an algorithm that is capable of automatically segmenting the 8 incisors on a radiograph.
-To accomplish this we were provided with 14 radiographs with the landmarks for each incisor. We used these landmarks to make a active shape model, section \ref{sec:alignment}. Before using these models for fitting the incisors of other radiographs, we made a method to find an initial guess for each incisor, section \ref{sec:initial}. When we have found the initial position, we then use the active shape models to fit to the incisors on the image, section \ref{sec:fit}. We tried different fitting algorithms, multiple variations of an energy based algorithm, section \ref{sec:fit_energy} and one profile based algorithm, section \ref{sec:fit_deriv}. When implementing these algorithms we encountered some problems with convergence, section \ref{sec:convergence}. After some experimentation we decided that the profile based algorithm gave the best results and thus we used this algorithm to do some more extensive tests, section \ref{sec:results}.
+To accomplish this we were provided with 14 radiographs with the landmarks for each incisor. We used these landmarks to make a active shape model, section \ref{sec:alignment}. Before using these models for fitting the incisors of other radiographs, we made a method to find an initial guess for each incisor, section \ref{sec:initial}. When we have found the initial position, we then use the active shape models to fit to the incisors on the image, section \ref{sec:fit}. We tried different fitting algorithms, multiple variations of an energy based algorithm, section \ref{sec:fit_energy} and one profile based algorithm, section \ref{sec:fit_deriv}. When implementing these algorithms we encountered some problems with convergence, section \ref{sec:convergence}. After some experimentation we decided that the energy based algorithm using the oriented gradient, gave the best results and thus we used this algorithm to do some more extensive tests, section \ref{sec:results}.
 
 
 \section{Alignment} \label{sec:alignment}
 To be able to combine all the different landmarks of each incisor they need to be comparable (same center, similar scale and rotation). We realigned the landmarks so they the same center, rotation and scale. To accomplish this we used Procrustes Analysis as described in protocol 4 of \cite{TemplateAlgorithm}. Convergence in step 7 of this protocol is achieved if every element of the new result differs at most 0.01 from the result of the previous iteration.
 
 \section{Convergence}\label{sec:convergence}
-When testing the different algorithms, we encountered a problem with the fitting of our contours: it didn't convergence completely. To solve this we first were a bit lenient about when convergence happened: if less than 10\% of the points describing the contour changed, we considered this converged. This approach gave us some better results, but it didn't solve the problem completely. We thought that the contours endlessly cycled between certain states. We solved this by introducing an extra condition: if each point of the contour changed at most 10 pixels in every 50 iterations, we considered this converged. This new condition guaranteed termination of the algorithm. 
+When testing the different algorithms, we encountered a problem with the fitting of our contours: it didn't convergence completely. To solve this we first were a bit lenient about when convergence happened: if less than 10\% of the points describing the contour changed, we considered this converged. This approach gave us some better results, but it didn't solve the problem completely. We thought that the contours endlessly cycled between certain states. We solved this by introducing an extra condition: if each point of the contour changed at most 10 pixels in every 50 iterations, we considered this converged. This new condition guaranteed termination of the algorithm. We choose 10 pixels over 50 iterations, because we wanted to only continue when a significant change has happened during a considerable amount of iterations.
 
-A second observation we made was that the contour would move outside the bounds of a reasonable solution. When this occurs, we would stop the execution of the fitting and consider the current result as best fit. We consider the bounds of a reasonable solution as a rectangle with trice the width and 140\% the height of the initial rectangle found as initial position, see section \ref{sec:initial}.
+A second observation we made was that the contour would move outside the bounds of a reasonable solution, figure \ref{fig:twoBoxes}. When this occurs, we would stop the execution of the fitting and consider the current result as best fit. We consider the bounds of a reasonable solution as a rectangle with trice the width and 140\% the height of the initial rectangle found as initial position, see section \ref{sec:initial}. We chose such a big difference in width and height, because some incisors are rotated, which could drastically affect the width.
 
-%figure
+\begin{figure}[h!]
+  \centering
+    \includegraphics[width=0.75\textwidth]{images/twoBoxes.jpg}
+  \caption{The estimate of an incisor and the reasonable boundaries}
+  \label{fig:twoBoxes}
+\end{figure}
 
 \section{Initializing starting position}\label{sec:initial}
 Before we can try to fit our model to the image, we need to find an initial estimate of the incisors. We decided to use PCA to find the estimate.
-To make sure teeth aren't confused with each other we decided to group the upper and lower incisors in two different groups and search for each group independently. This means that we extract two cropped images, respectively of the four upper and lower incisors. In figures \ref{fig:PCAupper} and \ref{fig:PCAlower} we show the results of both PCA procedures.
+To make sure teeth aren't confused with each other we decided to group the upper and lower incisors in two different groups and search for each group independently. This means that we extract two cropped images, respectively of the four upper and lower incisors.
 
 To limit the amount of comparisons to be done and attain reasonable solutions, we can limit the search space to the central area of each image, since the incisors only reside there. The areas for both upper and lower incisors are displayed in figure \ref{fig:PCAsearch}.
 
+\begin{figure}[h!]
+  \centering
+    \includegraphics[width=0.75\textwidth]{images/searchSpace.jpg}
+  \caption{The search space for the upper and lower incisors.}
+  \label{fig:PCAsearch}
+\end{figure}
+
 To extract an estimate for each tooth, we simply divide the found result in four equally long parts, figure \ref{fig:split4}. Even though it is not precise, we decided that it would be good enough as an initial estimate.
+
+\begin{figure}[h!]
+  \centering
+    \includegraphics[width=0.75\textwidth]{images/divide.jpg}
+  \caption{Example of how we divide the found initial position.}
+  \label{fig:split4}
+\end{figure}
+
 
 \section{Contour fitting}\label{sec:fit}
 After finding the initial estimate of an incisor, we then have to fit the estimate to image. We tried four different approaches to this particular problem. The first one is based on using the nearest edges, second and third one are based on an energy function and the fourth one is based on profiles. Although they are slightly different, they still all follow the same algorithm: the active shape model algorithm described in protocol 2 from \cite{TemplateAlgorithm}.
 
 \subsection{Nearest edge based}\label{sec:fit_edge}
-The first approach was to iteratively examine the area of each model point and calculate the distance to the nearest edge. We then moved each model point to it's best neighbor with the lowest distance. Then we mapped the model generated by the PCA to our found points as described in \cite{GenerateModel}. This was done until the contour converged. The edges were found by using the canny operator provided by opencv \cite{Canny}. To reduce noise we have tested a variety of filters:  GaussianBlur, MedianBlur and bilateralFilter\cite{PythonFilters}. A problem that arose was that the incisor had an internal edge around the crown \ref{fig:InternalEdge} and that the edges around the roots were weak. We tried to solve this by processing the root and crown differently but to no avail.
+The first approach was to iteratively examine the area of each model point and calculate the distance to the nearest edge. We then moved each model point to it's best neighbor with the lowest distance. Then we mapped the model generated by the PCA to our found points as described in \cite{GenerateModel}. This was done until the contour converged. The edges were found by using the canny operator provided by opencv \cite{Canny}. To reduce noise we have tested a variety of filters:  GaussianBlur, MedianBlur and bilateralFilter\cite{PythonFilters}. A problem that arose was that the incisor had an internal edge around the crown, see figure \ref{fig:InternalEdge}, and that the edges around the roots were weak. We tried to solve this by processing the root and crown differently but to no avail.
+
+
+\begin{figure}[h!]
+  \centering
+    \includegraphics[width=0.75\textwidth]{images/internalEdge.jpg}
+  \caption{The edges around the crown.}
+  \label{fig:InternalEdge}
+\end{figure}
 
 \subsection{Energy based}\label{sec:fit_energy}
 The second and third approaches are energy based. We examine the area around each point and search for the point that will result in the lowest total energy for the entire contour. To efficiently find the lowest, we used the Viterbi algorithm. After finding the nearest contour with the lowest energy, we map the model generated PCA to the found contour. This is repeated until the contour converges.
 
 The energy is divided in two parts: internal and external energy. The internal energy is defined by the formula used in the course, stiffness and elasticity. For the external energy we tried two different functions, which is the only difference between the two approaches.
+
+To acquire the gradients we used the sobel function from \cite{PythonFilters}. This function already does some filtering before calculating the gradients. To avoid to much filtering, we decided not to add any extra filters.
 
 \subsubsection{Gradient size based}
 Our first energy based approach uses the same external energy function as seen in the course:
@@ -77,15 +108,146 @@ The profiles we take from the training set contains 5 pixels in each direction a
 
 \section{Results}\label{sec:results}
 
+We weren't sure which of these three approaches was the best: nearest edge, oriented gradient and profiles. To learn which one was the best, we decided to do a leave-one-out analysis for all three approaches.  The results of this analysis would give us the necessary information. We calculated the 2-norm of the distance between our found model points and the real landmarks. We put the results in table \ref{tab:louResults}.
+\begin{equation} \label{eq:errorResults}
+Error = \|landmarks - foundpoints\|
+\end{equation}
+We decided beforehand that the one with the least error would be selected. Table  \ref{tab:louResults} shows that the energy based approach with the orientated gradient gives the best results. Even though it is better than the others, it is still not very good. After looking through the images generated during the analysis, we saw a few mismatches between the incisors and our initial positioning. We assume that these mismatches are the main reason for the big error differences between the different radiographs. We display this in figures \ref{fig:firstFailure} and \ref{fig:secondFailure}.
+
+To show the end results of our work we compare the segmentations we find with the given landmarks for each radiograph, see figure \ref{fig:animals} and \ref{fig:animals2}.
+
 \begin{table}
 \begin{center}
-\csvautotabular{Tabel_leaveone.csv}
-\caption{Leave-one-out analasys}
+\csvautotabular{Tabel_leaveone.csv} 
+\caption{Leave-one-out analasys, Error calculated with equation \ref{eq:errorResults}} \label{tab:louResults}
 \end{center}
 \end{table}
 
-\section{Conclusion}
+\begin{figure}[h!]
+  \centering
+    \includegraphics[width=0.75\textwidth]{images/firstFailure.jpg}
+  \caption{The upper incisors are matched to much to the left.}
+  \label{fig:firstFailure}
+\end{figure}
 
+\begin{figure}[h!]
+  \centering
+    \includegraphics[width=0.75\textwidth]{images/secondFailure.jpg}
+  \caption{The lower incisors are to short.}
+  \label{fig:secondFailure}
+\end{figure}
+
+\begin{figure}
+\centering
+        \caption{The comparison between our found incisors (white) and the real incisors (green) for:}\label{fig:animals}
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,1.jpg}
+                \caption{ radiograph 1.}
+                \label{fig:comp1}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,2.jpg}
+                \caption{ radiograph 2.}
+                \label{fig:comp4}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,3.jpg}
+                \caption{ radiograph 3.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,4.jpg}
+                \caption{ radiograph 4.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,5.jpg}
+                \caption{ radiograph 5.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,6.jpg}
+                \caption{ radiograph 6.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,7.jpg}
+                \caption{ radiograph 7.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,8.jpg}
+                \caption{ radiograph 8.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,9.jpg}
+                \caption{ radiograph 9.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,10.jpg}
+                \caption{ radiograph 10.}
+                \label{fig:comp3}
+        \end{subfigure}
+\end{figure}
+\begin{figure}
+\centering
+	\caption{The comparison between our found incisors (white) and the real incisors (green) for:}\label{fig:animals2}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,11.jpg}
+                \caption{ radiograph 11.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,12.jpg}
+                \caption{ radiograph 12.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,13.jpg}
+                \caption{ radiograph 13.}
+                \label{fig:comp3}
+        \end{subfigure}
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[b]{0.45\textwidth}
+                \includegraphics[width=\textwidth]{Images/segLand,14.jpg}
+                \caption{ radiograph 14.}
+                \label{fig:comp3}
+        \end{subfigure}
+       
+\end{figure}
+
+
+\section{Conclusion}
+We can conclude that our algorithm needs some improvement and refinement. We definitely need to improve the automatic initialization of the incisors. Although the contour finding needs some improvement, we think it can be limited by modifying the weights of the energy function. Unfortunately due to time constraints we couldn't pursue this anymore.
+
+\pagebreak
 
 \section{References}
 \bibliographystyle{plain}
