@@ -8,23 +8,25 @@ import estimateClick
 import sys
 import scipy.spatial
 import scipy.signal
-import initialPosition
+import initialPositionForTest as initialPosition
 import random
 #
 # Landmarks zijn (x1,y1,x2,y2,...) geordend, zie visualize (heb normaal deze fout verbeterd)
 #
-numbersOfVectors = 10
+numbersOfVectors = 6
 iWeight1 = 1
 iWeight2 = 1
 lengthtraining = 5
 lengthtest = 10
+LeaveOneoutTest =1
+Counter = 1
 def lineData(tooth):
     data = getModelData(tooth)
 
     valuesLists = np.zeros((40,14,2*lengthtraining+1))
     
-    for graphNumber in range(0,14):
-        img = visualize.readRadiograph(graphNumber+1)
+    for graphNumber in range(0,14-LeaveOneoutTest):
+        img = visualize.readRadiograph((graphNumber+Counter)%14+1)
         toothData = data[:,graphNumber-1]        
         
         normals = getNormals(toothData)
@@ -96,18 +98,18 @@ def line(x0, y0, x1, y1):
             y += sy   
     array.append((x,y))
     return array
-def getLandmarks(graphnumber,tooth):
+def getLandmarks(tooth):
     result= np.zeros((80))
-    f = open('Landmarks\original\landmarks'+str(graphnumber)+'-'+str(tooth)+'.txt', 'r')
+    f = open('Landmarks\original\landmarks'+str((14+Counter) % 14+1)+'-'+str(tooth)+'.txt', 'r')
     t=0
     for j in f:
         result[t]=int(float(j.rstrip()))
         t = t+1
     return result
 def getModelData(tooth):
-    result= np.zeros((80,14))
-    for i in range(14):
-        f = open('Landmarks\original\landmarks'+str(i+1)+'-'+str(tooth)+'.txt', 'r')
+    result= np.zeros((80,14-LeaveOneoutTest))
+    for i in range(14-LeaveOneoutTest):
+        f = open('Landmarks\original\landmarks'+str((i+Counter) % 14+1)+'-'+str(tooth)+'.txt', 'r')
         t=0
         for j in f:
             result[t,i]=int(float(j.rstrip()))
@@ -115,7 +117,7 @@ def getModelData(tooth):
     return result
 def reallign(data):
     #1. Translate each example so that its centre of gravity is at the origin
-    for i in range(14):
+    for i in range(14-LeaveOneoutTest):
         x=0
         y=0
         for j in range(0,80,2):
@@ -146,7 +148,7 @@ def reallign(data):
                 data[j+1,i]= math.sin(t)*data[j,i]+math.cos(t)*data[j+1,i]
             data[:,i]=data[:,i]/s
         '''
-        for i in range(14):
+        for i in range(14-LeaveOneoutTest):
             #4.1 |xj|=1
             data[:,i] = data[:,i]/np.linalg.norm(data[:,i])
             #4.2 find angle
@@ -161,7 +163,7 @@ def reallign(data):
                 data[j,i]=math.cos(angle)*data[j,i]-math.sin(angle)*data[j+1,i]
                 data[j+1,i]=math.sin(angle)*data[j,i]+math.cos(angle)*data[j+1,i]
         #5. Re-estimate the mean from aligned shapes.
-        example =np.sum(data,axis=1)/(14)
+        example =np.sum(data,axis=1)/(14-LeaveOneoutTest)
         #6. Apply constraints on scale and orientation to the current estimate of the
         #mean by aligning it with x0 and scaling so that |x| = 1.
         '''
@@ -284,10 +286,11 @@ def getTestData():
     
     
 def fitDerivative(dataList,vectorsList,meanList,p1,teethData):
+    global Counter
     #per image
-    for graphNumber in range(1,15):
+    for graphNumber in range(14,15):
         res=0
-        img = visualize.readRadiograph(graphNumber)
+        img = visualize.readRadiograph((graphNumber+Counter) % 14 +1)
         img3 = img.copy()
         for tnum in range(1,9):
             #data = dataList[tnum-1]
@@ -299,7 +302,7 @@ def fitDerivative(dataList,vectorsList,meanList,p1,teethData):
             #step1 ask estimate
             
             #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
-            [(x1,y1),(x2,y2)] = p1[graphNumber -1][tnum-1]
+            [(x1,y1),(x2,y2)] = p1[(graphNumber+Counter) % 14 ][tnum-1]
             #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
             lengthx =x2-x1
             lengthy =y2-y1
@@ -372,7 +375,7 @@ def fitDerivative(dataList,vectorsList,meanList,p1,teethData):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
                     cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
-                    res = res+np.linalg.norm(genModel-getLandmarks(graphNumber,tnum))
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'succeeded'
                     break
                 #print str(x1-lengthx)+','+str(min(genModel[::2]))+','+str(max(genModel[::2]))+','+str(x2+lengthx)
@@ -380,25 +383,26 @@ def fitDerivative(dataList,vectorsList,meanList,p1,teethData):
                 if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
                     visualize.addLandmarks(img3, genModel,False)
                     cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
-                    res = res+np.linalg.norm(genModel-getLandmarks(graphNumber,tnum))
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'exceeded'
                     break
                 if(counter == var):
                     counter =0
         img2=cv2.resize(img3,(1000,500))
-        cv2.imwrite('Results/8teeth_full,der,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
+        cv2.imwrite('Results/8teeth,der,' + str((graphNumber+Counter) % 14 +1) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
-        print 'derivative,'+str(graphNumber) +',' + str(res)
+        print 'derivative,'+str((graphNumber+Counter) % 14 +1) +',' + str(res)
         
     return
 def fitOgr(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
+    global Counter
     #per image
-    for graphNumber in range(1,15):
+    for graphNumber in range(14,15):
         res=0
         sobelx = sobelxList[graphNumber-1]
         sobely = sobelyList[graphNumber-1]
-        img = visualize.readRadiograph(graphNumber)
+        img = visualize.readRadiograph((graphNumber+Counter) % 14 +1)
         img3 = img.copy()
         for tnum in range(1,9):
             #data = dataList[tnum-1]
@@ -408,7 +412,7 @@ def fitOgr(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
             #step1 ask estimate
             
             #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
-            [(x1,y1),(x2,y2)] = p1[graphNumber-1][tnum-1]
+            [(x1,y1),(x2,y2)] = p1[(graphNumber+Counter) % 14 ][tnum-1]
             #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
             lengthx =x2-x1
             lengthy =y2-y1
@@ -475,7 +479,7 @@ def fitOgr(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
                     cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
-                    res = res+np.linalg.norm(genModel-getLandmarks(graphNumber,tnum))
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'succeeded'
                     break
                 #print str(x1-lengthx)+','+str(min(genModel[::2]))+','+str(max(genModel[::2]))+','+str(x2+lengthx)
@@ -483,23 +487,24 @@ def fitOgr(dataList,vectorsList,meanList,sobelxList,sobelyList,p1):
                 if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
                     visualize.addLandmarks(img3, genModel,False)
                     cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
-                    res = res+np.linalg.norm(genModel-getLandmarks(graphNumber,tnum))
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'exceeded'
                     break
                 if(counter == var):
                     counter =0
         img2=cv2.resize(img3,(1000,500))
-        cv2.imwrite('Results/8teeth_full,ogr,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
+        cv2.imwrite('Results/8teeth,ogr,' + str((graphNumber+Counter) % 14 +1) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
-        print 'Orientated Gradient,'+str(graphNumber) +',' + str(res)
+        print 'Orientated Gradient,'+str((graphNumber+Counter) % 14 +1) +',' + str(res)
         
     return 
 def fitNE(dataList,vectorsList,meanList,p1):
+    global Counter
     #per image
-    for graphNumber in range(1,15):
+    for graphNumber in range(14,15):
         res=0
-        img = visualize.readRadiograph(graphNumber)
+        img = visualize.readRadiograph((graphNumber+Counter) % 14 +1)
         img3 = img.copy()
         for tnum in range(1,9):
             #data = dataList[tnum-1]
@@ -509,7 +514,7 @@ def fitNE(dataList,vectorsList,meanList,p1):
             #step1 ask estimate
             
             #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
-            [(x1,y1),(x2,y2)] = p1[graphNumber-1 ][tnum-1]
+            [(x1,y1),(x2,y2)] = p1[(graphNumber+Counter) % 14 ][tnum-1]
             #print str(x1) + "," + str(y1) + " - " + str(x2) + "," + str(y2)
             lengthx =x2-x1
             lengthy =y2-y1
@@ -576,7 +581,7 @@ def fitNE(dataList,vectorsList,meanList,p1):
                     #visualize genModel
                     visualize.addLandmarks(img3, genModel,False)
                     cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
-                    res = res+np.linalg.norm(genModel-getLandmarks(graphNumber,tnum))
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'succeeded'
                     break
                 #print str(x1-lengthx)+','+str(min(genModel[::2]))+','+str(max(genModel[::2]))+','+str(x2+lengthx)
@@ -584,16 +589,16 @@ def fitNE(dataList,vectorsList,meanList,p1):
                 if max(genModel[::2]) > x2+lengthx or max(genModel[1::2]) > y2+0.2*lengthy or min(genModel[::2]) < x1-lengthx or min(genModel[1::2]) < y1-0.2*lengthy:
                     visualize.addLandmarks(img3, genModel,False)
                     cv2.rectangle(img3, (int(x1),int(y1)), (int(x2),int(y2)), (255, 255, 255), 2)
-                    res = res+np.linalg.norm(genModel-getLandmarks(graphNumber,tnum))
+                    res = res+np.linalg.norm(genModel-getLandmarks(tnum))
                     print 'exceeded'
                     break
                 if(counter == var):
                     counter =0
         img2=cv2.resize(img3,(1000,500))
-        cv2.imwrite('Results/8teeth_full,ne,' + str(graphNumber) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
+        cv2.imwrite('Results/8teeth,ne,' + str((graphNumber+Counter) % 14 +1) + ',' + str(numbersOfVectors) + ','+ str(res) + '.jpg',np.uint8(img2))
         #cv2.imshow('img_res4',img2)
         #cv2.waitKey(0) 
-        print 'Nearest Edge,'+str(graphNumber) +',' + str(res)
+        print 'Nearest Edge,'+str((graphNumber+Counter) % 14 +1) +',' + str(res)
         
     return 
 def adaptMean(mean,(x1,y1),(x2,y2)):
@@ -806,50 +811,65 @@ def PCA(X, num_components=0):
     return [eigenvalues, eigenvectors, mu]
     
 if __name__ == '__main__':
-    reallignedData = [0]*8
-    for i in range(1,9):
-        data = getModelData(i)
-        reallignedData[i-1] = reallign(data)
-    #list1 =[#(4,0.0,1.2),
-    #    #(4,0.4,0.0),
-    #    #(4,0.8,0.8),
-    #    #(4,0.8,1.2),
-    #    #(4,1.2,0.4),
-    #    #(4,1.2,0.8),
-    #    #(6,0.0,0.8),
-    #    #(6,0.0,1.6),
-    #    (6,0.4,0.4),
-    #    (6,0.4,1.2),
-    #    (6,0.8,0.4),
-    #    (6,0.8,1.6),
-    #    (6,1.2,0.0),
-    #    (8,0.0,0.4),
-    #    (8,0.0,1.2),
-    #    (8,0.4,0.4),
-    #    (8,0.4,0.8),
-    #    (8,0.8,0.4),
-    #    (8,0.8,0.8),
-    #    (8,1.6,0.8),
-    #    (8,1.6,1.2)]
-    #kevin oneven numberOfVectors 1,3,5,..
-    #tim even numberOfVectors 2,4,6,...
-    teethdata =[0]*8
-    for tnum in range(1,9):
-        teethdata[tnum-1]=lineData(tnum)
-        
-    p2=initialPosition.findPositionForAll()
-    sobelxx = [0]*14
-    sobelyy = [0]*14
-    for graphNumber in range(1,15):
-        img = visualize.readRadiograph(graphNumber)
-        sobelxx[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
-        sobelyy[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
-    print str(numbersOfVectors)#+',' + str(iWeight1)+',' + str(iWeight2)
-    sys.stdout.flush()
-    values = [0] * 8
-    vectors = [0] * 8
-    mean = [0] * 8
-    for a in range(1,9):
-        [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
-    testData = getTestData()
-    result = fitOgr(reallignedData, vectors, mean,sobelxx,sobelyy,p2)            
+    for g in range(0,14):
+        Counter = g;
+        reallignedData = [0]*8
+        for i in range(1,9):
+            data = getModelData(i)
+            reallignedData[i-1] = reallign(data)
+        #list1 =[#(4,0.0,1.2),
+        #    #(4,0.4,0.0),
+        #    #(4,0.8,0.8),
+        #    #(4,0.8,1.2),
+        #    #(4,1.2,0.4),
+        #    #(4,1.2,0.8),
+        #    #(6,0.0,0.8),
+        #    #(6,0.0,1.6),
+        #    (6,0.4,0.4),
+        #    (6,0.4,1.2),
+        #    (6,0.8,0.4),
+        #    (6,0.8,1.6),
+        #    (6,1.2,0.0),
+        #    (8,0.0,0.4),
+        #    (8,0.0,1.2),
+        #    (8,0.4,0.4),
+        #    (8,0.4,0.8),
+        #    (8,0.8,0.4),
+        #    (8,0.8,0.8),
+        #    (8,1.6,0.8),
+        #    (8,1.6,1.2)]
+        #kevin oneven numberOfVectors 1,3,5,..
+        #tim even numberOfVectors 2,4,6,...
+        teethdata =[0]*8
+        for tnum in range(1,9):
+            teethdata[tnum-1]=lineData(tnum)
+            
+        p2=initialPosition.findPositionForAll(LeaveOneoutTest,Counter)
+        sobelxx = [0]*14
+        sobelyy = [0]*14
+        for graphNumber in range(1,15):
+            img = visualize.readRadiograph(graphNumber)
+            sobelxx[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=5)
+            sobelyy[graphNumber-1] = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=5)
+        #for (i,j,k) in list1:
+        #    numbersOfVectors = i
+        #    iWeight1 = j
+        #    iWeight2 = k
+        for i in [4,6,8,10]:
+            numbersOfVectors = i
+            #for j in range(0,20,4):
+            #    iWeight1 = j/10.0
+            #    for k in range(0,20,4):
+            #        iWeight2 = k/10.0
+            print str(numbersOfVectors)#+',' + str(iWeight1)+',' + str(iWeight2)
+            sys.stdout.flush()
+            values = [0] * 8
+            vectors = [0] * 8
+            mean = [0] * 8
+            for a in range(1,9):
+                [values[a-1], vectors[a-1], mean[a-1]] = PCA(reallignedData[a-1],numbersOfVectors)
+            testData = getTestData()
+            result = fitNE(reallignedData, vectors, mean,p2)
+            result = fitOgr(reallignedData, vectors, mean,sobelxx,sobelyy,p2)
+            result = fitDerivative(reallignedData, vectors, mean,p2,teethdata)
+            

@@ -47,11 +47,11 @@ def normalize(img):
     return (img*(255./(np.max(img)-np.min(img)))+np.min(img)).astype(np.uint8)
  
  
-def makeData(resize1 = 500, resize2 = 500, Upper=1):
+def makeData(resize1 = 500, resize2 = 500, Upper=1,LeaveOneoutTest=0,Counter=0):
     
-    results = np.zeros((14,resize2,resize1))
+    results = np.zeros((14-LeaveOneoutTest,resize2,resize1))
     
-    smallImages = np.zeros((14,resize1 * resize2))
+    smallImages = np.zeros((14-LeaveOneoutTest,resize1 * resize2))
     if Upper ==0 :
         listTopFourTeeth =[
         [(1339,1004),(1698,1261)],
@@ -86,11 +86,11 @@ def makeData(resize1 = 500, resize2 = 500, Upper=1):
     [(1309,547),(1707,859)],
     [(1281,709),(1680,1039)] ]
 
-    for graphNumber in range(1,15):
-        img = visualize.readRadiograph(graphNumber)
+    for graphNumber in range(1,15-LeaveOneoutTest):
+        img = visualize.readRadiograph((graphNumber +Counter) %14 +1)
         
         #[(x1,y1),(x2,y2)] = estimateClick.askForEstimate(img)
-        [(x1,y1),(x2,y2)] = listTopFourTeeth[graphNumber-1]
+        [(x1,y1),(x2,y2)] = listTopFourTeeth[(graphNumber +Counter) %14]
         cutImage = img[y1:y2,x1:x2]
         result = cv2.resize(cutImage,(resize1,resize2), interpolation=cv2.INTER_NEAREST)
         results[graphNumber-1,:,:] = result
@@ -237,11 +237,11 @@ def findPositionFor(graphNumber, tooth):
 #        [(a,b),(c,d)],im = findPosition(mean, eigenvectors, img, size1, size2,1)
 #        for j in range(1,5):
 #            allPositions[i-1,j-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]
-def findPositionForAll():
+def findPositionForAll(LeaveOneoutTest,Counter):
     allPositions = np.zeros((14,8,2,2))
     size1 = 500
     size2 = 400
-    data = makeData(size1,size2,1)
+    data = makeData(size1,size2,1,LeaveOneoutTest,Counter)
     [eigenvalues, eigenvectors, mean] = pca(data,5)
     for i in range(1,15):
         img = visualize.readRadiograph(i)
@@ -250,7 +250,7 @@ def findPositionForAll():
             allPositions[i-1,j-1] = [( b +(j-1)*(d-b)/4,a),(b +(j)*(d-b)/4,c)]
     size1 = 350
     size2 = 300
-    data = makeData(size1,size2,0)
+    data = makeData(size1,size2,0,LeaveOneoutTest,Counter)
     [eigenvalues, eigenvectors, mean] = pca(data,5)
     for i in range(1,15):
         img = visualize.readRadiograph(i)

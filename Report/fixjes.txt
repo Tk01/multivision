@@ -1,0 +1,5 @@
+inleiding profile based is niet best anymore.
+Alignment:
+Convergence: why 50, why 10? why low height and high width marge?
+Initializing:
+Contour fitting:
