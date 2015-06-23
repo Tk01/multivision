@@ -4,6 +4,7 @@
 \usepackage{graphicx}
 \usepackage[colorlinks, allcolors=black]{hyperref}
 \usepackage{geometry}
+\usepackage{csvsimple}
 \geometry{tmargin=3cm, bmargin=2.2cm, lmargin=2.2cm, rmargin=2cm}
 \usepackage{todonotes} %Used for the figure placeholders
 
@@ -75,6 +76,13 @@ f(g_{s}) = (g_{s} - \overline{g}) S_{g}^{-1} (g_{s}-\overline{g})
 The profiles we take from the training set contains 5 pixels in each direction along the normal, which results in a profile of length 11. When we try to find the best position we take a profile at the current point containing 10 pixels in each direction, profile length 21. We then sample parts of length 11 from this profile and from these samples we find the most similar one. The center pixel of the most similar sample will be picked as the new point.
 
 \section{Results}\label{sec:results}
+
+\begin{table}
+\begin{center}
+\csvautotabular{Tabel_leaveone.csv}
+\caption{Leave-one-out analasys}
+\end{center}
+\end{table}
 
 \section{Conclusion}
 
