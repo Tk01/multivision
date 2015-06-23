@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9 64-bit) (preloaded format=pdflatex 2011.10.21)  23 JUN 2015 13:58
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (MiKTeX 2.9 64-bit) (preloaded format=pdflatex 2011.10.21)  23 JUN 2015 19:47
 entering extended mode
 **C:/Users/Kevin/Documents/1eMaCW/Computer*Vision/ProjectGit/Report/template.te
 x
@@ -686,9 +686,9 @@ vin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/sedes.pdf>])
 ("C:\Users\Kevin\Documents\1eMaCW\Computer Vision\ProjectGit\Report\template.to
 c"
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 7.
+(Font)              <7> on input line 6.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 7.
+(Font)              <5> on input line 6.
 )
 \tf@toc=\write6
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
@@ -696,185 +696,199 @@ been already used, duplicate ignored
 <to be read again> 
                    \relax 
 l.19 \newpage
-              [1] <images/twoBoxes.jpg, id=98, 3034.33624pt x 1602.98875pt>
-File: images/twoBoxes.jpg Graphic file (type jpg)
-
-<use images/twoBoxes.jpg>
-Package pdftex.def Info: images/twoBoxes.jpg used on input line 36.
-(pdftex.def)             Requested size: 358.5048pt x 189.39073pt.
- [2 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/images/t
-woBoxes.jpg>]
-<images/searchSpace.jpg, id=106, 3034.33624pt x 1602.98875pt>
+              [1] <images/searchSpace.jpg, id=98, 3034.33624pt x 1602.98875pt>
 File: images/searchSpace.jpg Graphic file (type jpg)
 
 <use images/searchSpace.jpg>
-Package pdftex.def Info: images/searchSpace.jpg used on input line 49.
+Package pdftex.def Info: images/searchSpace.jpg used on input line 38.
 (pdftex.def)             Requested size: 358.5048pt x 189.39073pt.
 
-<images/divide.jpg, id=108, 3034.33624pt x 1602.98875pt>
+<images/divide.jpg, id=100, 3034.33624pt x 1602.98875pt>
 File: images/divide.jpg Graphic file (type jpg)
 
 <use images/divide.jpg>
-Package pdftex.def Info: images/divide.jpg used on input line 58.
+Package pdftex.def Info: images/divide.jpg used on input line 47.
 (pdftex.def)             Requested size: 358.5048pt x 189.39073pt.
- [3 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/images/s
-earchSpace.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Rep
-ort/images/divide.jpg>]
-<images/internalEdge.jpg, id=120, 221.628pt x 147.9126pt>
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[2 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/images/se
+archSpace.jpg>] <images/internalEdge.jpg, id=113, 221.628pt x 147.9126pt>
 File: images/internalEdge.jpg Graphic file (type jpg)
 
 <use images/internalEdge.jpg>
-Package pdftex.def Info: images/internalEdge.jpg used on input line 73.
+Package pdftex.def Info: images/internalEdge.jpg used on input line 62.
 (pdftex.def)             Requested size: 358.5048pt x 239.265pt.
- [4 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/images/i
-nternalEdge.jpg>]
-<images/firstFailure.jpg, id=147, 1003.75pt x 501.875pt>
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+[3 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/images/di
+vide.jpg>] [4 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Repor
+t/images/internalEdge.jpg>]
+<images/twoBoxes.jpg, id=140, 3034.33624pt x 1602.98875pt>
+File: images/twoBoxes.jpg Graphic file (type jpg)
+
+<use images/twoBoxes.jpg>
+Package pdftex.def Info: images/twoBoxes.jpg used on input line 106.
+(pdftex.def)             Requested size: 358.5048pt x 189.39073pt.
+
+<images/firstFailure.jpg, id=149, 1003.75pt x 501.875pt>
 File: images/firstFailure.jpg Graphic file (type jpg)
 
 <use images/firstFailure.jpg>
-Package pdftex.def Info: images/firstFailure.jpg used on input line 128.
-(pdftex.def)             Requested size: 358.5048pt x 179.25047pt.
-
-<images/secondFailure.jpg, id=148, 1003.75pt x 501.875pt>
-File: images/secondFailure.jpg Graphic file (type jpg)
-
-<use images/secondFailure.jpg>
-Package pdftex.def Info: images/secondFailure.jpg used on input line 135.
+Package pdftex.def Info: images/firstFailure.jpg used on input line 130.
 (pdftex.def)             Requested size: 358.5048pt x 179.25047pt.
 
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-<Images/segLand,1.jpg, id=149, 3034.33624pt x 1602.98875pt>
+<images/secondFailure.jpg, id=150, 1003.75pt x 501.875pt>
+File: images/secondFailure.jpg Graphic file (type jpg)
+
+<use images/secondFailure.jpg>
+Package pdftex.def Info: images/secondFailure.jpg used on input line 137.
+(pdftex.def)             Requested size: 358.5048pt x 179.25047pt.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<Images/segLand,1.jpg, id=151, 3034.33624pt x 1602.98875pt>
 File: Images/segLand,1.jpg Graphic file (type jpg)
 
 <use Images/segLand,1.jpg>
-Package pdftex.def Info: Images/segLand,1.jpg used on input line 144.
+Package pdftex.def Info: Images/segLand,1.jpg used on input line 146.
 (pdftex.def)             Requested size: 215.10141pt x 113.61487pt.
 
-<Images/segLand,2.jpg, id=150, 3034.33624pt x 1609.01125pt>
+<Images/segLand,2.jpg, id=152, 3034.33624pt x 1609.01125pt>
 File: Images/segLand,2.jpg Graphic file (type jpg)
 
 <use Images/segLand,2.jpg>
-Package pdftex.def Info: Images/segLand,2.jpg used on input line 151.
+Package pdftex.def Info: Images/segLand,2.jpg used on input line 153.
 (pdftex.def)             Requested size: 215.10141pt x 114.04173pt.
 
-<Images/segLand,3.jpg, id=151, 2995.19pt x 1606.0pt>
+<Images/segLand,3.jpg, id=153, 2995.19pt x 1606.0pt>
 File: Images/segLand,3.jpg Graphic file (type jpg)
 
 <use Images/segLand,3.jpg>
-Package pdftex.def Info: Images/segLand,3.jpg used on input line 158.
+Package pdftex.def Info: Images/segLand,3.jpg used on input line 160.
 (pdftex.def)             Requested size: 215.10141pt x 115.32314pt.
 
-<Images/segLand,4.jpg, id=152, 3034.33624pt x 1606.0pt>
+<Images/segLand,4.jpg, id=154, 3034.33624pt x 1606.0pt>
 File: Images/segLand,4.jpg Graphic file (type jpg)
 
 <use Images/segLand,4.jpg>
-Package pdftex.def Info: Images/segLand,4.jpg used on input line 165.
+Package pdftex.def Info: Images/segLand,4.jpg used on input line 167.
 (pdftex.def)             Requested size: 215.10141pt x 113.8283pt.
 
-<Images/segLand,5.jpg, id=153, 3034.33624pt x 1609.01125pt>
+<Images/segLand,5.jpg, id=155, 3034.33624pt x 1609.01125pt>
 File: Images/segLand,5.jpg Graphic file (type jpg)
 
 <use Images/segLand,5.jpg>
-Package pdftex.def Info: Images/segLand,5.jpg used on input line 172.
+Package pdftex.def Info: Images/segLand,5.jpg used on input line 174.
 (pdftex.def)             Requested size: 215.10141pt x 114.04173pt.
 
-<Images/segLand,6.jpg, id=154, 3034.33624pt x 1606.0pt>
+<Images/segLand,6.jpg, id=156, 3034.33624pt x 1606.0pt>
 File: Images/segLand,6.jpg Graphic file (type jpg)
 
 <use Images/segLand,6.jpg>
-Package pdftex.def Info: Images/segLand,6.jpg used on input line 179.
+Package pdftex.def Info: Images/segLand,6.jpg used on input line 181.
 (pdftex.def)             Requested size: 215.10141pt x 113.8283pt.
 
-<Images/segLand,7.jpg, id=155, 3034.33624pt x 1606.0pt>
+<Images/segLand,7.jpg, id=157, 3034.33624pt x 1606.0pt>
 File: Images/segLand,7.jpg Graphic file (type jpg)
 
 <use Images/segLand,7.jpg>
-Package pdftex.def Info: Images/segLand,7.jpg used on input line 186.
+Package pdftex.def Info: Images/segLand,7.jpg used on input line 188.
 (pdftex.def)             Requested size: 215.10141pt x 113.8283pt.
 
-<Images/segLand,8.jpg, id=156, 3034.33624pt x 1606.0pt>
+<Images/segLand,8.jpg, id=158, 3034.33624pt x 1606.0pt>
 File: Images/segLand,8.jpg Graphic file (type jpg)
 
 <use Images/segLand,8.jpg>
-Package pdftex.def Info: Images/segLand,8.jpg used on input line 193.
+Package pdftex.def Info: Images/segLand,8.jpg used on input line 195.
 (pdftex.def)             Requested size: 215.10141pt x 113.8283pt.
 
-<Images/segLand,9.jpg, id=157, 3034.33624pt x 1602.98875pt>
+<Images/segLand,9.jpg, id=159, 3034.33624pt x 1602.98875pt>
 File: Images/segLand,9.jpg Graphic file (type jpg)
 
 <use Images/segLand,9.jpg>
-Package pdftex.def Info: Images/segLand,9.jpg used on input line 200.
+Package pdftex.def Info: Images/segLand,9.jpg used on input line 202.
 (pdftex.def)             Requested size: 215.10141pt x 113.61487pt.
 
-<Images/segLand,10.jpg, id=158, 3034.33624pt x 1606.0pt>
+<Images/segLand,10.jpg, id=160, 3034.33624pt x 1606.0pt>
 File: Images/segLand,10.jpg Graphic file (type jpg)
 
 <use Images/segLand,10.jpg>
-Package pdftex.def Info: Images/segLand,10.jpg used on input line 207.
+Package pdftex.def Info: Images/segLand,10.jpg used on input line 209.
 (pdftex.def)             Requested size: 215.10141pt x 113.8283pt.
 
 
-LaTeX Warning: Float too large for page by 6.47073pt on input line 211.
+LaTeX Warning: Float too large for page by 6.47073pt on input line 213.
 
-<Images/segLand,11.jpg, id=159, 3034.33624pt x 1606.0pt>
+<Images/segLand,11.jpg, id=161, 3034.33624pt x 1606.0pt>
 File: Images/segLand,11.jpg Graphic file (type jpg)
 
 <use Images/segLand,11.jpg>
-Package pdftex.def Info: Images/segLand,11.jpg used on input line 218.
+Package pdftex.def Info: Images/segLand,11.jpg used on input line 220.
 (pdftex.def)             Requested size: 215.10141pt x 113.8283pt.
 
-<Images/segLand,12.jpg, id=160, 3034.33624pt x 1606.0pt>
+<Images/segLand,12.jpg, id=162, 3034.33624pt x 1606.0pt>
 File: Images/segLand,12.jpg Graphic file (type jpg)
 
 <use Images/segLand,12.jpg>
-Package pdftex.def Info: Images/segLand,12.jpg used on input line 225.
+Package pdftex.def Info: Images/segLand,12.jpg used on input line 227.
 (pdftex.def)             Requested size: 215.10141pt x 113.8283pt.
 
-<Images/segLand,13.jpg, id=161, 3034.33624pt x 1606.0pt>
+<Images/segLand,13.jpg, id=163, 3034.33624pt x 1606.0pt>
 File: Images/segLand,13.jpg Graphic file (type jpg)
 
 <use Images/segLand,13.jpg>
-Package pdftex.def Info: Images/segLand,13.jpg used on input line 232.
+Package pdftex.def Info: Images/segLand,13.jpg used on input line 234.
 (pdftex.def)             Requested size: 215.10141pt x 113.8283pt.
 
-<Images/segLand,14.jpg, id=162, 3034.33624pt x 1609.01125pt>
+<Images/segLand,14.jpg, id=164, 3034.33624pt x 1609.01125pt>
 File: Images/segLand,14.jpg Graphic file (type jpg)
 
 <use Images/segLand,14.jpg>
-Package pdftex.def Info: Images/segLand,14.jpg used on input line 239.
+Package pdftex.def Info: Images/segLand,14.jpg used on input line 241.
 (pdftex.def)             Requested size: 215.10141pt x 114.04173pt.
- [5 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/images/f
-irstFailure.jpg>] [6 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGi
-t/Report/images/secondFailure.jpg>] [7 <C:/Users/Kevin/Documents/1eMaCW/Compute
-r Vision/ProjectGit/Report/Images/segLand,1.jpg> <C:/Users/Kevin/Documents/1eMa
-CW/Computer Vision/ProjectGit/Report/Images/segLand,2.jpg> <C:/Users/Kevin/Docu
-ments/1eMaCW/Computer Vision/ProjectGit/Report/Images/segLand,3.jpg> <C:/Users/
-Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/Images/segLand,4.jpg> 
-<C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/Images/segLa
-nd,5.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/Im
-ages/segLand,6.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit
-/Report/Images/segLand,7.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/
-ProjectGit/Report/Images/segLand,8.jpg> <C:/Users/Kevin/Documents/1eMaCW/Comput
-er Vision/ProjectGit/Report/Images/segLand,9.jpg> <C:/Users/Kevin/Documents/1eM
-aCW/Computer Vision/ProjectGit/Report/Images/segLand,10.jpg>]
+ [5 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/images/t
+woBoxes.jpg>]
+
+LaTeX Warning: Text page 6 contains only floats.
+
+[6 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/images/fi
+rstFailure.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Rep
+ort/images/secondFailure.jpg>] [7 <C:/Users/Kevin/Documents/1eMaCW/Computer Vis
+ion/ProjectGit/Report/Images/segLand,1.jpg> <C:/Users/Kevin/Documents/1eMaCW/Co
+mputer Vision/ProjectGit/Report/Images/segLand,2.jpg> <C:/Users/Kevin/Documents
+/1eMaCW/Computer Vision/ProjectGit/Report/Images/segLand,3.jpg> <C:/Users/Kevin
+/Documents/1eMaCW/Computer Vision/ProjectGit/Report/Images/segLand,4.jpg> <C:/U
+sers/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/Images/segLand,5.
+jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/Images/
+segLand,6.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Repo
+rt/Images/segLand,7.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/Proje
+ctGit/Report/Images/segLand,8.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vi
+sion/ProjectGit/Report/Images/segLand,9.jpg> <C:/Users/Kevin/Documents/1eMaCW/C
+omputer Vision/ProjectGit/Report/Images/segLand,10.jpg>]
 ("C:\Users\Kevin\Documents\1eMaCW\Computer Vision\ProjectGit\Report\template.bb
 l")
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 256.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 258.
  [8 <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Report/Images/s
 egLand,11.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/ProjectGit/Repo
 rt/Images/segLand,12.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer Vision/Proj
 ectGit/Report/Images/segLand,13.jpg> <C:/Users/Kevin/Documents/1eMaCW/Computer 
 Vision/ProjectGit/Report/Images/segLand,14.jpg>]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 256.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 258.
 
 ("C:\Users\Kevin\Documents\1eMaCW\Computer Vision\ProjectGit\Report\template.au
 x")
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 256.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 256.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 258.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 258.
 Package rerunfilecheck Info: File `template.out' has not changed.
-(rerunfilecheck)             Checksum: 33CFED38877144E7F926E3926DD21FE5;758.
+(rerunfilecheck)             Checksum: 4C9883121C36A202AE6BC5D5A6025454;758.
 
 
 LaTeX Warning: There were multiply-defined labels.
@@ -883,11 +897,11 @@ LaTeX Warning: There were multiply-defined labels.
 Here is how much of TeX's memory you used:
  15903 strings out of 494045
  287493 string characters out of 3148386
- 372529 words of memory out of 3000000
+ 370531 words of memory out of 3000000
  18873 multiletter control sequences out of 15000+200000
  6577 words of font info for 24 fonts, out of 3000000 for 9000
  715 hyphenation exceptions out of 8191
- 55i,8n,75p,1078b,560s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 55i,8n,75p,1139b,560s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Program Files/Miktex/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Progra
 m Files/Miktex/fonts/type1/public/amsfonts/cm/cmbx12.pfb><C:/Program Files/Mikt
 ex/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program Files/Miktex/fonts/typ
@@ -899,9 +913,9 @@ ex/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files/Miktex/fonts/typ
 e1/public/amsfonts/cm/cmsy7.pfb><C:/Program Files/Miktex/fonts/type1/public/ams
 fonts/cm/cmti10.pfb><C:/Program Files/Miktex/fonts/type1/public/amsfonts/cm/cmt
 t10.pfb>
-Output written on template.pdf (9 pages, 5960629 bytes).
+Output written on template.pdf (9 pages, 5961063 bytes).
 PDF statistics:
- 246 PDF objects out of 1000 (max. 8388607)
+ 247 PDF objects out of 1000 (max. 8388607)
  42 named destinations out of 1000 (max. 500000)
  222 words of extra memory for PDF output out of 10000 (max. 10000000)
 
